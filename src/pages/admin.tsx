@@ -52,6 +52,8 @@ export function AdminPage() {
       41: 5, 42: 5, 43: 5, 44: 5, 45: 5, 46: 5,
     } as Record<number, number>,
   });
+  const [imageInputKey, setImageInputKey] = useState(0);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -92,6 +94,8 @@ export function AdminPage() {
       accent: "#00f0ff",
       stockMap: { 36:5,37:5,38:5,39:5,40:5,41:5,42:5,43:5,44:5,45:5,46:5 },
     });
+    setImageInputKey((key) => key + 1);
+    setFileError(null);
     setEditingProduct(null);
   };
 
@@ -114,6 +118,8 @@ export function AdminPage() {
       accent: p.accent || "#00f0ff",
       stockMap: stockObj,
     });
+    setImageInputKey((key) => key + 1);
+    setFileError(null);
     setIsAddModalOpen(true);
   };
 
@@ -583,8 +589,8 @@ export function AdminPage() {
                         onClick={() => {
                           const defaultCat = type === "tops" ? "Shirts" : "Road";
                           const stockMap = type === "tops"
-                            ? {1:5,2:5,3:5,4:5,5:5,6:5}
-                            : {36:5,37:5,38:5,39:5,40:5,41:5,42:5,43:5,44:5,45:5,46:5};
+                            ? ({1:5,2:5,3:5,4:5,5:5,6:5} as Record<number, number>)
+                            : ({36:5,37:5,38:5,39:5,40:5,41:5,42:5,43:5,44:5,45:5,46:5} as Record<number, number>);
                           setFormData({ ...formData, productType: type, category: defaultCat, stockMap });
                         }}
                         className={`flex-1 rounded-lg border py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${
@@ -599,11 +605,40 @@ export function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Image URL *</label>
-                    <input type="url" required placeholder="https://images.unsplash.com/photo-..."
-                      value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full rounded-lg bg-[#07090e] border border-[#1b2438] px-3.5 py-2 text-sm text-white focus:border-[#00f0ff] focus:outline-none" />
-                    <p className="text-[11px] text-gray-500 mt-1">Paste any high-res image URL (Unsplash, CDN, etc.)</p>
+                    <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Select Product Image *</label>
+                    <input
+                      key={imageInputKey}
+                      type="file"
+                      accept="image/*"
+                      required={!formData.image}
+                      onChange={(e) => {
+                        setFileError(null);
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (!file.type.startsWith("image/")) {
+                          setFileError("Please select a valid image file.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (typeof reader.result === "string") {
+                            setFormData({ ...formData, image: reader.result });
+                          }
+                        };
+                        reader.onerror = () => {
+                          console.error("Failed to read selected image file.");
+                          setFileError("Unable to load the selected image. Please choose a different file.");
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full rounded-lg bg-[#07090e] border border-[#1b2438] px-3.5 py-2 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-[#1b2438] file:px-3 file:py-2 file:text-sm file:text-white file:shadow-none focus:border-[#00f0ff] focus:outline-none"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      Choose an image file from your device. The selected image will preview above.
+                    </p>
+                    {fileError ? (
+                      <p className="text-[11px] text-red-400 mt-1">{fileError}</p>
+                    ) : null}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

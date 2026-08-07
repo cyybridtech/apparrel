@@ -18,7 +18,7 @@ export const products = mysqlTable("products", {
   productType: varchar("product_type", { length: 50 }).notNull().default("footwear"), // "footwear" | "tops"
   colorway: varchar("colorway", { length: 255 }).notNull(),
   description: text("description").notNull(),
-  image: varchar("image", { length: 2048 }).notNull(),
+  image: text("image").notNull(),
   accent: varchar("accent", { length: 50 }).notNull(),
   priceCents: int("price_cents").notNull(),
   compareAtCents: int("compare_at_cents"),
