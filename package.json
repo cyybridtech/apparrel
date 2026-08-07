@@ -7,6 +7,8 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
     "start": "next start",
+    "migrate": "npx tsx --import ./src/server/preload.ts src/db/migrate.ts",
+    "reseed": "npx tsx --import ./src/server/preload.ts src/db/reseed.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

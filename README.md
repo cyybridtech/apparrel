@@ -12,6 +12,18 @@ Deployment (Vercel)
    - any other secrets used by your app
 7. Vercel will build the frontend and deploy serverless functions from the `api/` directory.
 
+Railway database hosting
+
+1. Create a new project in Railway and add a MySQL plugin.
+2. Copy the generated connection string from Railway.
+3. In Vercel Project Settings → Environment Variables, add:
+   - `DATABASE_URL` — the Railway MySQL connection string
+4. Optionally run migrations or seed data locally before deploying:
+   - `npm install`
+   - `npm run migrate`
+   - `npm run reseed`
+5. Deploy the frontend and functions after the DB connection is configured.
+
 Local testing
 
 Install dependencies and run dev:
