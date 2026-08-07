@@ -5,10 +5,12 @@
 import "dotenv/config";
 import { db } from "../db";
 import { products, productSizes, cartItems, orderItems, orders } from "../db/schema";
+import { ensureSchema } from "../db/setup";
 import { sql } from "drizzle-orm";
 
 async function reseed() {
   console.log("🗑  Clearing tables...");
+  await ensureSchema();
 
   // Disable FK checks, clear all, re-enable
   await db.execute(sql`SET FOREIGN_KEY_CHECKS = 0`);

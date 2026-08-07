@@ -1,8 +1,11 @@
 import "dotenv/config";
 import { db } from "../db";
+import { ensureSchema } from "./setup";
 import { sql } from "drizzle-orm";
 
 async function migrate() {
+  await ensureSchema();
+
   const queries = [
     `ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type VARCHAR(50) NOT NULL DEFAULT 'footwear'`,
     `ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE`,

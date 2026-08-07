@@ -2,6 +2,8 @@
 
 Deployment (Vercel)
 
+> This app requires an external MySQL-compatible database. Vercel does not host a MySQL database for this project.
+
 1. In Vercel create a new project and connect the repository: https://github.com/cyybridtech/apparrel
 2. Application Preset: **Vite**
 3. Root Directory: project root (leave blank)
@@ -9,6 +11,7 @@ Deployment (Vercel)
 5. Output directory: `dist`
 6. Add environment variables (Project Settings → Environment Variables):
    - `DATABASE_URL` — MySQL connection string (required)
+   - `DATABASE_SSL_CA` — optional TLS certificate PEM if your provider requires it
    - any other secrets used by your app
 7. Vercel will build the frontend and deploy serverless functions from the `api/` directory.
 
@@ -46,15 +49,36 @@ If you want to use Render for the database with MySQL:
 
 TiDB Cloud hosting
 
-TiDB Cloud is MySQL-compatible, so you can use it with this app by setting `DATABASE_URL` to the TiDB Cloud connection string.
+TiDB Cloud is MySQL-compatible, but you must target a dedicated application database, not the built-in `sys` database.
 
 1. Create a TiDB Cloud cluster.
-2. Create a database user and password.
-3. Copy the MySQL-compatible connection string.
-4. In Vercel Project Settings → Environment Variables, add:
-   - `DATABASE_URL` — the TiDB Cloud connection string
-   - `DATABASE_SSL_CA` — local or hosted CA file path if TiDB Cloud requires the certificate
-5. Deploy the frontend and functions after the DB connection is configured.
+2. Create a dedicated database for the app, for example: `footwear`.
+3. Create a database user and password.
+4. Copy the MySQL-compatible connection string.
+5. In Vercel Project Settings → Environment Variables, add:
+   - `DATABASE_URL` — the MySQL connection string, for example:
+     `mysql://<user>:<password>@<host>:<port>/<database>?ssl=true`
+   - `DATABASE_SSL_CA` — the full TLS CA certificate text from TiDB Cloud if TLS is required.
+     - On Vercel, paste the PEM contents directly into the env var.
+     - Locally, you can also set this to a certificate file path if you prefer.
+6. Deploy the frontend and functions after the DB connection is configured.
+
+If your URL currently ends with `/sys`, change it to the dedicated database name and rerun:
+
+```bash
+npm run migrate
+npm run reseed
+```
+
+Once the database is reachable, run locally:
+
+```bash
+npm install
+npm run migrate
+npm run reseed
+```
+
+If the database is empty, `npm run migrate` will create the tables and then apply schema updates.
 
 Local testing
 
