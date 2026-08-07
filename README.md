@@ -53,6 +53,7 @@ TiDB Cloud is MySQL-compatible, so you can use it with this app by setting `DATA
 3. Copy the MySQL-compatible connection string.
 4. In Vercel Project Settings → Environment Variables, add:
    - `DATABASE_URL` — the TiDB Cloud connection string
+   - `DATABASE_SSL_CA` — local or hosted CA file path if TiDB Cloud requires the certificate
 5. Deploy the frontend and functions after the DB connection is configured.
 
 Local testing
