@@ -1,0 +1,272 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark: #07090e;
+    --bg-card: #0e131f;
+    --bg-card-hover: #151c2e;
+    --border-dark: #1b2438;
+    --border-glow: rgba(0, 240, 255, 0.3);
+    --cyan: #00f0ff;
+    --cyan-glow: rgba(0, 240, 255, 0.2);
+    --gold: #ffb800;
+    --gold-glow: rgba(255, 184, 0, 0.2);
+    --emerald: #10b981;
+    --crimson: #ff3b5c;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+
+  ::selection {
+    background: rgba(0, 240, 255, 0.25);
+    color: #fff;
+  }
+}
+
+/* ─── Glassmorphism ─────────────────────────────────── */
+.glass-panel {
+  background: rgba(14, 19, 31, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-dark);
+}
+
+.glass-panel-glow {
+  background: rgba(14, 19, 31, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.12);
+}
+
+/* ─── Gradient Text ─────────────────────────────────── */
+.cyan-gradient-text {
+  background: linear-gradient(135deg, #00f0ff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #ffb800 0%, #ff6a3d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Buttons ───────────────────────────────────────── */
+.btn-cyan {
+  background: #00f0ff;
+  color: #07090e;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease;
+}
+.btn-cyan:hover {
+  background: #38f3ff;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.45);
+  transform: translateY(-1px);
+}
+.btn-cyan:active { transform: translateY(0); }
+
+.btn-ghost {
+  border: 1px solid var(--border-dark);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ─── Custom Scrollbars ─────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #07090e; }
+::-webkit-scrollbar-thumb { background: #1b2438; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+
+/* ─── Shimmer Loading ───────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #0e131f 0%,
+    #151c2e 20%,
+    #1b2438 40%,
+    #151c2e 60%,
+    #0e131f 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ─── Reveal Animation ──────────────────────────────── */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.reveal-up { animation: revealUp 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.reveal-fade { animation: revealFade 0.4s ease both; }
+
+/* ─── Pop (badge) ───────────────────────────────────── */
+@keyframes pop {
+  0%   { transform: scale(0.5); }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 0.28s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ─── Pulse Ring ────────────────────────────────────── */
+@keyframes pingOnce {
+  0%   { transform: scale(1); opacity: 0.8; }
+  80%  { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ─── Card hover glow border ───────────────────────── */
+.card-hover {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.card-hover:hover {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 12px 36px rgba(0, 240, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ─── Category Card ─────────────────────────────────── */
+.cat-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.cat-card:hover { transform: scale(1.02); }
+.cat-card img {
+  transition: transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.cat-card:hover img { transform: scale(1.08); }
+.cat-card .cat-overlay {
+  background: linear-gradient(to top, rgba(7,9,14,0.9) 0%, transparent 60%);
+  transition: background 0.3s ease;
+}
+.cat-card:hover .cat-overlay {
+  background: linear-gradient(to top, rgba(7,9,14,0.95) 0%, rgba(0,240,255,0.06) 100%);
+}
+
+/* ─── Mega-menu ─────────────────────────────────────── */
+.mega-menu {
+  transform: translateY(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), opacity 0.18s ease;
+}
+.mega-trigger:hover .mega-menu,
+.mega-menu:hover {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ─── Announcement bar gradient ─────────────────────── */
+.announcement-gradient {
+  background: linear-gradient(90deg, #7000ff 0%, #00c2cc 50%, #7000ff 100%);
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ─── Range input ───────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #1b2438;
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00f0ff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,240,255,0.5);
+  transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* ─── Progress bar (free shipping) ─────────────────── */
+.shipping-bar {
+  height: 3px;
+  background: #1b2438;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.shipping-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #00f0ff, #a855f7);
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ─── Sale pulse badge ───────────────────────────────  */
+@keyframes salePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,92,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(255,59,92,0); }
+}
+.sale-badge { animation: salePulse 2s ease infinite; }
+
+/* ─── Sticky Buy Bar ─────────────────────────────────── */
+.sticky-buy-bar {
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.sticky-buy-bar.visible {
+  transform: translateY(0);
+}
+
+/* ─── Tab underline ─────────────────────────────────── */
+.tab-active {
+  position: relative;
+}
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: #00f0ff;
+  border-radius: 2px;
+}
