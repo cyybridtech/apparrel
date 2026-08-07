@@ -24,6 +24,37 @@ Railway database hosting
    - `npm run reseed`
 5. Deploy the frontend and functions after the DB connection is configured.
 
+Render database hosting
+
+This app currently uses MySQL. Render does not provide a built-in managed MySQL product, so you have two options:
+
+- Use Render to run a MySQL instance inside a Docker service and expose its connection URL.
+- Or continue using Railway/PlanetScale for MySQL and host the app on Vercel.
+
+If you want to use Render for the database with MySQL:
+
+1. Create a new Render service.
+2. Choose Docker and deploy a MySQL Docker image (for example `mysql:8`).
+3. Set service environment variables for MySQL:
+   - `MYSQL_ROOT_PASSWORD`
+   - `MYSQL_DATABASE`
+   - `MYSQL_USER`
+   - `MYSQL_PASSWORD`
+4. Use Render service internal DNS or hostname to build `DATABASE_URL`:
+   - `mysql://root:password@<render-service-host>:3306/<database>`
+5. Add `DATABASE_URL` to Vercel settings.
+
+TiDB Cloud hosting
+
+TiDB Cloud is MySQL-compatible, so you can use it with this app by setting `DATABASE_URL` to the TiDB Cloud connection string.
+
+1. Create a TiDB Cloud cluster.
+2. Create a database user and password.
+3. Copy the MySQL-compatible connection string.
+4. In Vercel Project Settings → Environment Variables, add:
+   - `DATABASE_URL` — the TiDB Cloud connection string
+5. Deploy the frontend and functions after the DB connection is configured.
+
 Local testing
 
 Install dependencies and run dev:
