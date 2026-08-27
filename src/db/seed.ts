@@ -562,7 +562,7 @@ async function createTablesIfNotExist() {
     }
   }
 
-  // Ensure columns exist on existing databases
+  // Ensure ALL required columns exist on existing database tables unconditionally
   const alters = [
     sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`,
     sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`,
@@ -583,15 +583,16 @@ export function ensureSeed(): Promise<void> {
     seeding = (async () => {
       await createTablesIfNotExist();
 
-      let hasProducts = false;
+      let needsSeed = false;
       try {
-        const [row] = await db.select({ n: count() }).from(products);
-        if (row && row.n > 0) hasProducts = true;
+        const prods = await db.select().from(products).limit(1);
+        if (prods.length === 0) needsSeed = true;
       } catch (err) {
-        console.warn("Products table select count check error:", err);
+        console.warn("Full products column select warning, attempting auto-seed:", err);
+        needsSeed = true;
       }
 
-      if (hasProducts) return;
+      if (!needsSeed) return;
 
       for (const p of CATALOG) {
         try {
