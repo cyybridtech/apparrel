@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { eur } from "@/lib/format";
 import type { OrderWithItems, ProductWithSizes } from "@/lib/types";
+import { useStore } from "@/lib/store";
 import {
   IconArrow,
   IconCheck,
@@ -21,23 +22,38 @@ interface AnalyticsData {
 }
 
 export function AdminPage() {
+  const { toast } = useStore();
   const [activeTab, setActiveTab] = useState<AdminTab>("products");
   const [products, setProducts] = useState<ProductWithSizes[]>([]);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Modals state
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductWithSizes | null>(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
 
   // Form State
-  const [formData, setFormData] = useState({
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductWithSizes | null>(null);
+  const [imageInputKey, setImageInputKey] = useState(0);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<{
+    name: string;
+    brand: string;
+    productType: "footwear" | "tops";
+    category: string;
+    colorway: string;
+    description: string;
+    image: string;
+    priceGhs: string;
+    compareAtGhs: string;
+    weightGrams: string;
+    terrain: string;
+    accent: string;
+    stockMap: Record<number, number>;
+  }>({
     name: "",
-    brand: "KICKS GHANA",
-    productType: "footwear" as "footwear" | "tops",
+    brand: "",
+    productType: "footwear",
     category: "Road",
     colorway: "",
     description: "",
@@ -47,28 +63,31 @@ export function AdminPage() {
     weightGrams: "280",
     terrain: "Street",
     accent: "#00f0ff",
-    stockMap: {
-      36: 5, 37: 5, 38: 5, 39: 5, 40: 5,
-      41: 5, 42: 5, 43: 5, 44: 5, 45: 5, 46: 5,
-    } as Record<number, number>,
+    stockMap: { 36: 5, 37: 5, 38: 5, 39: 5, 40: 5, 41: 5, 42: 5, 43: 5, 44: 5, 45: 5, 46: 5 },
   });
-  const [imageInputKey, setImageInputKey] = useState(0);
-  const [fileError, setFileError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const [resProd, resOrd, resAna] = await Promise.all([
-        fetch("/api/products").then((r) => r.json()),
-        fetch("/api/orders").then((r) => r.json()),
-        fetch("/api/admin/analytics").then((r) => r.json()),
+        fetch("/api/products"),
+        fetch("/api/orders"),
+        fetch("/api/admin/analytics"),
       ]);
 
-      if (resProd.products) setProducts(resProd.products);
-      if (resOrd.orders) setOrders(resOrd.orders);
-      if (resAna) setAnalytics(resAna);
+      if (resProd.ok) {
+        const d = await resProd.json();
+        setProducts(d.products || []);
+      }
+      if (resOrd.ok) {
+        const d = await resOrd.json();
+        setOrders(d.orders || []);
+      }
+      if (resAna.ok) {
+        const d = await resAna.json();
+        setAnalytics(d);
+      }
     } catch (err) {
-      console.error("Failed to load admin data", err);
+      console.error("Failed to fetch admin data", err);
     } finally {
       setLoading(false);
     }
@@ -79,9 +98,10 @@ export function AdminPage() {
   }, []);
 
   const resetForm = () => {
+    setEditingProduct(null);
     setFormData({
       name: "",
-      brand: "KICKS GHANA",
+      brand: "",
       productType: "footwear",
       category: "Road",
       colorway: "",
@@ -92,11 +112,10 @@ export function AdminPage() {
       weightGrams: "280",
       terrain: "Street",
       accent: "#00f0ff",
-      stockMap: { 36:5,37:5,38:5,39:5,40:5,41:5,42:5,43:5,44:5,45:5,46:5 },
+      stockMap: { 36: 5, 37: 5, 38: 5, 39: 5, 40: 5, 41: 5, 42: 5, 43: 5, 44: 5, 45: 5, 46: 5 },
     });
     setImageInputKey((key) => key + 1);
     setFileError(null);
-    setEditingProduct(null);
   };
 
   const openEditModal = (p: ProductWithSizes) => {
@@ -124,15 +143,35 @@ export function AdminPage() {
   };
 
   const handleSetFeatured = async (id: number, featured: boolean) => {
+    const targetProd = products.find((p) => p.id === id);
+    setProducts((prev) =>
+      prev.map((p) => ({
+        ...p,
+        isFeatured: p.id === id ? featured : false,
+      }))
+    );
+
     try {
-      await fetch(`/api/admin/products/${id}/featured`, {
+      const res = await fetch(`/api/admin/products/${id}/featured`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ featured }),
       });
+
+      if (res.ok) {
+        toast(
+          featured
+            ? `★ "${targetProd?.name || 'Product'}" set as active Hero Drop!`
+            : `Removed "${targetProd?.name || 'Product'}" from Hero Drop.`,
+          "ok"
+        );
+      } else {
+        toast("Could not update Hero Drop status.", "err");
+      }
       fetchData();
     } catch (err) {
       console.error(err);
+      toast("Error updating Hero Drop status.", "err");
     }
   };
 

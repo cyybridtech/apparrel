@@ -11,8 +11,31 @@ const STATS: Array<[string, string]> = [
   ["100%", "Authentic Guaranteed"],
 ];
 
+const DEFAULT_FEATURED: ProductWithSizes = {
+  id: 1,
+  slug: "voltage-runner-2",
+  name: "Voltage Runner 2",
+  brand: "AXIOM",
+  productType: "footwear",
+  category: "Road",
+  colorway: "Ink / Volt",
+  description: "Our fastest daily trainer. A nitrogen-injected midsole returns 87% of your energy while the volt outsole makes sure everyone sees you coming.",
+  image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&h=900&fit=crop&auto=format&q=85",
+  accent: "#D8F34A",
+  priceCents: 149000,
+  compareAtCents: 189000,
+  rating: 4.8,
+  ratingCount: 412,
+  isNew: true,
+  isFeatured: true,
+  releaseYear: 2026,
+  weightGrams: 238,
+  terrain: "Road",
+  sizes: [],
+};
+
 export function Hero() {
-  const [featured, setFeatured] = useState<ProductWithSizes | null>(null);
+  const [featured, setFeatured] = useState<ProductWithSizes>(DEFAULT_FEATURED);
 
   useEffect(() => {
     fetch("/api/featured-product")
@@ -87,20 +110,13 @@ export function Hero() {
         {/* Right: Rotating Featured Product */}
         <div className="relative lg:col-span-6 flex items-center justify-center">
           <Reveal delay={140} className="w-full">
-            {featured ? (
-              <RotatingShoe3D
-                imageSrc={featured.image}
-                shoeName={featured.name}
-                priceGhs={(featured.priceCents / 100).toLocaleString("en-GH", { minimumFractionDigits: 0 })}
-                compareGhs={featured.compareAtCents ? (featured.compareAtCents / 100).toLocaleString("en-GH") : undefined}
-                discount={discount}
-              />
-            ) : (
-              /* Loading skeleton */
-              <div className="relative mx-auto w-full max-w-md h-[440px] flex items-center justify-center">
-                <div className="w-72 h-72 rounded-3xl bg-[#0e131f] border border-[#1b2438] animate-pulse" />
-              </div>
-            )}
+            <RotatingShoe3D
+              imageSrc={featured.image}
+              shoeName={featured.name}
+              priceGhs={(featured.priceCents / 100).toLocaleString("en-GH", { minimumFractionDigits: 0 })}
+              compareGhs={featured.compareAtCents ? (featured.compareAtCents / 100).toLocaleString("en-GH") : undefined}
+              discount={discount}
+            />
           </Reveal>
         </div>
       </div>
