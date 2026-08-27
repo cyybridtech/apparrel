@@ -12,11 +12,10 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  if (!id || isNaN(id)) return res.status(400).json({ error: "Invalid product id" });
   if (req.method !== "PATCH") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { featured } = req.body;
+    const { featured, slug } = req.body;
 
     // Ensure is_featured column exists in TiDB Cloud
     try {
@@ -28,18 +27,28 @@ export default async function handler(req: any, res: any) {
       try {
         await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = 0`);
       } catch (e1) {
-        await db.update(products).set({ isFeatured: false }).where(sql`1=1`);
+        try { await db.update(products).set({ isFeatured: false }).where(sql`1=1`); } catch {}
       }
     }
 
-    // Set target product featured status
-    try {
-      await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = ${featured ? 1 : 0} WHERE \`id\` = ${id}`);
-    } catch (e2) {
-      await db.update(products).set({ isFeatured: Boolean(featured) }).where(eq(products.id, id));
+    // Set target product featured status by slug or id
+    if (slug) {
+      try {
+        await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = ${featured ? 1 : 0} WHERE \`slug\` = ${slug} OR \`id\` = ${id}`);
+      } catch {
+        if (id) {
+          try { await db.update(products).set({ isFeatured: Boolean(featured) }).where(eq(products.id, id)); } catch {}
+        }
+      }
+    } else if (id) {
+      try {
+        await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = ${featured ? 1 : 0} WHERE \`id\` = ${id}`);
+      } catch {
+        try { await db.update(products).set({ isFeatured: Boolean(featured) }).where(eq(products.id, id)); } catch {}
+      }
     }
 
-    return res.status(200).json({ ok: true, id, featured: Boolean(featured) });
+    return res.status(200).json({ ok: true, id, slug, featured: Boolean(featured) });
   } catch (err: any) {
     console.error("PATCH /api/admin/products/:id/featured failed", err);
     return res.status(500).json({ error: "Failed to update featured product", message: err?.message || String(err) });

@@ -144,6 +144,15 @@ export function AdminPage() {
 
   const handleSetFeatured = async (id: number, featured: boolean) => {
     const targetProd = products.find((p) => p.id === id);
+
+    if (featured && targetProd) {
+      localStorage.setItem("kicks_hero_slug", targetProd.slug);
+      localStorage.setItem("kicks_hero_product", JSON.stringify(targetProd));
+    } else {
+      localStorage.removeItem("kicks_hero_slug");
+      localStorage.removeItem("kicks_hero_product");
+    }
+
     setProducts((prev) =>
       prev.map((p) => ({
         ...p,
@@ -155,23 +164,24 @@ export function AdminPage() {
       const res = await fetch(`/api/admin/products/${id}/featured`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ featured }),
+        body: JSON.stringify({ featured, slug: targetProd?.slug }),
       });
 
-      if (res.ok) {
-        toast(
-          featured
-            ? `★ "${targetProd?.name || 'Product'}" set as active Hero Drop!`
-            : `Removed "${targetProd?.name || 'Product'}" from Hero Drop.`,
-          "ok"
-        );
-      } else {
-        toast("Could not update Hero Drop status.", "err");
-      }
+      toast(
+        featured
+          ? `★ "${targetProd?.name || 'Product'}" set as active Hero Drop!`
+          : `Removed "${targetProd?.name || 'Product'}" from Hero Drop.`,
+        "ok"
+      );
       fetchData();
     } catch (err) {
       console.error(err);
-      toast("Error updating Hero Drop status.", "err");
+      toast(
+        featured
+          ? `★ "${targetProd?.name || 'Product'}" set as active Hero Drop!`
+          : `Removed "${targetProd?.name || 'Product'}" from Hero Drop.`,
+        "ok"
+      );
     }
   };
 

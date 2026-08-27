@@ -38,10 +38,24 @@ export function Hero() {
   const [featured, setFeatured] = useState<ProductWithSizes>(DEFAULT_FEATURED);
 
   useEffect(() => {
+    // 1. Check local storage hero drop set by admin for instant rendering
+    const storedHero = localStorage.getItem("kicks_hero_product");
+    if (storedHero) {
+      try {
+        const parsed = JSON.parse(storedHero);
+        if (parsed && parsed.name && parsed.image) {
+          setFeatured(parsed);
+        }
+      } catch {}
+    }
+
+    // 2. Fetch latest live featured product from API
     fetch("/api/featured-product")
       .then((r) => r.json())
       .then((d) => {
-        if (d.product) setFeatured(d.product);
+        if (d.product && d.product.name) {
+          setFeatured(d.product);
+        }
       })
       .catch(() => {});
   }, []);
