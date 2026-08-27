@@ -15,17 +15,17 @@ export default async function handler(req: any, res: any) {
 
     let featured: any = null;
 
-    // 1. Try selecting product explicitly set as featured (hero drop)
+    // 1. Try selecting product explicitly set as featured (is_featured = 1)
     try {
       const [f] = await db
         .select()
         .from(products)
-        .where(eq(products.isFeatured, true))
+        .where(sql`is_featured = 1 OR is_featured = true`)
         .limit(1);
       featured = f;
     } catch {}
 
-    // 2. Fallback to product with compareAtCents discount
+    // 2. Fallback to product with compareAtCents discount only if NO product is marked featured
     if (!featured) {
       try {
         const [f] = await db

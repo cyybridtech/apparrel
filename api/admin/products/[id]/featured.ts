@@ -22,29 +22,27 @@ export default async function handler(req: any, res: any) {
       await db.execute(sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`);
     } catch {}
 
-    if (featured) {
-      // Unset any existing hero featured product
-      try {
-        await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = 0`);
-      } catch (e1) {
-        try { await db.update(products).set({ isFeatured: false }).where(sql`1=1`); } catch {}
-      }
-    }
+    // Unset ALL existing featured products first
+    try {
+      await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = 0`);
+    } catch {}
 
-    // Set target product featured status by slug or id
-    if (slug) {
-      try {
-        await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = ${featured ? 1 : 0} WHERE \`slug\` = ${slug} OR \`id\` = ${id}`);
-      } catch {
-        if (id) {
-          try { await db.update(products).set({ isFeatured: Boolean(featured) }).where(eq(products.id, id)); } catch {}
+    // Set target product featured status
+    if (featured) {
+      if (slug) {
+        try {
+          await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = 1 WHERE \`slug\` = ${slug} OR \`id\` = ${id}`);
+        } catch {
+          if (id) {
+            try { await db.update(products).set({ isFeatured: true }).where(eq(products.id, id)); } catch {}
+          }
         }
-      }
-    } else if (id) {
-      try {
-        await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = ${featured ? 1 : 0} WHERE \`id\` = ${id}`);
-      } catch {
-        try { await db.update(products).set({ isFeatured: Boolean(featured) }).where(eq(products.id, id)); } catch {}
+      } else if (id) {
+        try {
+          await db.execute(sql`UPDATE \`products\` SET \`is_featured\` = 1 WHERE \`id\` = ${id}`);
+        } catch {
+          try { await db.update(products).set({ isFeatured: true }).where(eq(products.id, id)); } catch {}
+        }
       }
     }
 

@@ -58,7 +58,7 @@ function ProductCard({ product, index }: { product: ProductWithSizes; index: num
     <Reveal delay={(index % 4) * 65}>
       <TiltCard className="h-full">
         <article
-          className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-[#1b2438] bg-[#0e131f] transition-all duration-300 hover:border-[#00f0ff]/50 hover:shadow-[0_12px_36px_rgba(0,240,255,0.12)] hover:-translate-y-1"
+          className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-[#1b2438] bg-[#0e131f] card-shimmer transition-all duration-300 hover:border-[#00f0ff]/60 hover:shadow-[0_12px_40px_rgba(0,240,255,0.18)] hover:-translate-y-1.5"
           onClick={() => setQuickViewId(product.id)}
         >
           {/* Image */}
