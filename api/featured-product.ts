@@ -9,35 +9,52 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    await ensureSeed();
+    try {
+      await ensureSeed();
+    } catch (sErr) {
+      console.warn("ensureSeed warning in featured-product:", sErr);
+    }
 
-    let [featured] = await db
-      .select()
-      .from(products)
-      .where(eq(products.isFeatured, true))
-      .limit(1);
-
-    if (!featured) {
-      [featured] = await db
+    let featured: any = null;
+    try {
+      const [f] = await db
         .select()
         .from(products)
-        .where(sql`compare_at_cents > price_cents`)
+        .where(eq(products.isFeatured, true))
         .limit(1);
+      featured = f;
+    } catch {}
+
+    if (!featured) {
+      try {
+        const [f] = await db
+          .select()
+          .from(products)
+          .where(sql`compare_at_cents > price_cents`)
+          .limit(1);
+        featured = f;
+      } catch {}
     }
 
     if (!featured) {
-      [featured] = await db.select().from(products).limit(1);
+      try {
+        const [f] = await db.select().from(products).limit(1);
+        featured = f;
+      } catch {}
     }
 
     if (!featured) {
       return res.status(200).json({ product: null });
     }
 
-    const sizes = await db
-      .select()
-      .from(productSizes)
-      .where(eq(productSizes.productId, featured.id))
-      .orderBy(asc(productSizes.eu));
+    let sizes: any[] = [];
+    try {
+      sizes = await db
+        .select()
+        .from(productSizes)
+        .where(eq(productSizes.productId, featured.id))
+        .orderBy(asc(productSizes.eu));
+    } catch {}
 
     return res.status(200).json({ product: { ...featured, sizes } });
   } catch (err: any) {

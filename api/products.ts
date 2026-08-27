@@ -15,9 +15,51 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    await ensureSeed();
-    const allProducts = await db.select().from(products);
-    const allSizes = await db.select().from(productSizes).orderBy(asc(productSizes.eu));
+    try {
+      await ensureSeed();
+    } catch (seedErr) {
+      console.warn("ensureSeed warning:", seedErr);
+    }
+
+    let allProducts: any[] = [];
+    try {
+      allProducts = await db.select().from(products);
+    } catch (colErr) {
+      console.warn("Full select failed, attempting fallback column select:", colErr);
+      const rows = await db.select({
+        id: products.id,
+        slug: products.slug,
+        name: products.name,
+        brand: products.brand,
+        category: products.category,
+        colorway: products.colorway,
+        description: products.description,
+        image: products.image,
+        accent: products.accent,
+        priceCents: products.priceCents,
+        compareAtCents: products.compareAtCents,
+        rating: products.rating,
+        ratingCount: products.ratingCount,
+        isNew: products.isNew,
+        weightGrams: products.weightGrams,
+        terrain: products.terrain,
+      }).from(products);
+
+      const clothingCategories = new Set(["Club T-Shirts", "Shirts", "Long Sleeves", "Designer Shirts"]);
+      allProducts = rows.map((r) => ({
+        ...r,
+        productType: clothingCategories.has(r.category) ? "tops" : "footwear",
+        isFeatured: false,
+        releaseYear: 2026,
+      }));
+    }
+
+    let allSizes: any[] = [];
+    try {
+      allSizes = await db.select().from(productSizes).orderBy(asc(productSizes.eu));
+    } catch (sizeErr) {
+      console.warn("productSizes query warning:", sizeErr);
+    }
 
     const byId = new Map<number, any>(allProducts.map((p) => [p.id, { ...p, sizes: [] }]));
     for (const s of allSizes) {

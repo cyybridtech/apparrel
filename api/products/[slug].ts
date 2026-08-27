@@ -1,6 +1,6 @@
 import { db } from "../../src/db/index.js";
 import { products, productSizes } from "../../src/db/schema.js";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq, ne } from "drizzle-orm";
 import { ensureSeed } from "../../src/db/seed.js";
 
 export default async function handler(req: any, res: any) {
@@ -9,10 +9,14 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    await ensureSeed();
+    try {
+      await ensureSeed();
+    } catch (sErr) {
+      console.warn("ensureSeed warning in products/[slug]:", sErr);
+    }
     const slug = req.query.slug as string;
 
-    const [product] = await db
+    let [product] = await db
       .select()
       .from(products)
       .where(eq(products.slug, slug))
@@ -22,27 +26,34 @@ export default async function handler(req: any, res: any) {
       return res.status(404).json({ error: "Not found" });
     }
 
-    const sizes = await db
-      .select()
-      .from(productSizes)
-      .where(eq(productSizes.productId, product.id))
-      .orderBy(asc(productSizes.eu));
+    let sizes: any[] = [];
+    try {
+      sizes = await db
+        .select()
+        .from(productSizes)
+        .where(eq(productSizes.productId, product.id))
+        .orderBy(asc(productSizes.eu));
+    } catch {}
 
-    const relatedRaw = await db
-      .select()
-      .from(products)
-      .where(
-        sql`id != ${product.id} AND (category = ${product.category} OR brand = ${product.brand})`
-      )
-      .limit(4);
+    let relatedRaw: any[] = [];
+    try {
+      relatedRaw = await db
+        .select()
+        .from(products)
+        .where(ne(products.id, product.id))
+        .limit(4);
+    } catch {}
 
     const relatedWithSizes = await Promise.all(
       relatedRaw.map(async (r) => {
-        const rSizes = await db
-          .select()
-          .from(productSizes)
-          .where(eq(productSizes.productId, r.id))
-          .orderBy(asc(productSizes.eu));
+        let rSizes: any[] = [];
+        try {
+          rSizes = await db
+            .select()
+            .from(productSizes)
+            .where(eq(productSizes.productId, r.id))
+            .orderBy(asc(productSizes.eu));
+        } catch {}
         return { ...r, sizes: rSizes };
       })
     );
