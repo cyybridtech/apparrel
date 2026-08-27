@@ -609,6 +609,7 @@ export function ensureSeed(): Promise<void> {
           ratingCount: p.ratingCount,
           isNew: p.isNew ?? false,
           isFeatured: p.isFeatured ?? false,
+          releaseYear: 2026,
           weightGrams: p.weightGrams,
           terrain: p.terrain,
         });
