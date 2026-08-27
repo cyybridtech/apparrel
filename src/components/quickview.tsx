@@ -50,6 +50,8 @@ export function QuickView() {
 
   if (!product) return null;
 
+  const isTops = (product as any).productType === "tops";
+  const CLOTHING_MAP: Record<number, string> = { 1:"XS",2:"S",3:"M",4:"L",5:"XL",6:"XXL" };
   const selected = product.sizes.find((s) => s.eu === eu) ?? null;
   const maxQty = selected ? Math.max(selected.stock, 1) : 1;
 
@@ -79,7 +81,7 @@ export function QuickView() {
         onClick={() => setQuickViewId(null)}
         aria-label="Close quick view"
       />
-      <div className="animate-toast-in relative z-10 grid max-h-[92vh] w-full max-w-4xl grid-cols-1 overflow-y-auto border border-line bg-ink-2 shadow-[12px_12px_0_rgba(0,0,0,0.5)] md:grid-cols-2">
+      <div className="animate-toast-in relative z-10 grid max-h-[92vh] w-full max-w-4xl grid-cols-1 overflow-y-auto rounded-2xl border border-[#1b2438] bg-[#0e131f] shadow-[0_24px_60px_rgba(0,0,0,0.7)] md:grid-cols-2">
         {/* image side */}
         <div
           className="relative flex items-center justify-center overflow-hidden p-8 min-h-72"
@@ -118,7 +120,7 @@ export function QuickView() {
             </div>
             <button
               onClick={() => setQuickViewId(null)}
-              className="grid h-9 w-9 shrink-0 place-items-center border border-line text-dust transition-colors hover:border-flame hover:text-flame"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[#1b2438] text-gray-400 transition-colors hover:border-[#ff3b5c] hover:text-[#ff3b5c]"
               aria-label="Close"
             >
               <IconX width={17} height={17} />
@@ -144,7 +146,7 @@ export function QuickView() {
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-[11px] font-bold tracking-[0.22em] uppercase">
-                Select size (EU)
+                {isTops ? "Select size" : "Select size (EU)"}
               </h3>
               {sizeError && (
                 <span className="animate-pop text-[11px] font-bold tracking-wider text-flame uppercase">
@@ -156,6 +158,7 @@ export function QuickView() {
               {product.sizes.map((s) => {
                 const out = s.stock <= 0;
                 const on = eu === s.eu;
+                const label = isTops ? (CLOTHING_MAP[s.eu] ?? s.eu) : s.eu;
                 return (
                   <button
                     key={s.eu}
@@ -166,16 +169,16 @@ export function QuickView() {
                     }}
                     className={`relative border py-2.5 text-sm font-semibold transition-all active:scale-90 ${
                       on
-                        ? "border-volt bg-volt text-ink"
+                        ? "border-[#00f0ff] bg-[#00f0ff] text-black"
                         : out
                           ? "cursor-not-allowed border-line text-dust/40 line-through"
-                          : "border-line hover:border-dust hover:text-bone"
+                          : "border-line hover:border-[#00f0ff]/60 hover:text-white"
                     }`}
                   >
-                    {s.eu}
+                    {label}
                     {!out && s.stock <= 2 && (
                       <span
-                        className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-flame"
+                        className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#ff3b5c]"
                         title={`Only ${s.stock} left`}
                       />
                     )}
@@ -224,11 +227,11 @@ export function QuickView() {
           </div>
 
           {/* perks */}
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-line pt-5 text-center">
+          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-[#1b2438] pt-5 text-center">
             {[
-              { icon: <IconTruck width={18} height={18} />, label: "Free ship €150+" },
-              { icon: <IconRefresh width={18} height={18} />, label: "30-day returns" },
-              { icon: <IconShield width={18} height={18} />, label: "2-yr warranty" },
+              { icon: <IconTruck width={18} height={18} />, label: "Free ship GH₵1,500+" },
+              { icon: <IconRefresh width={18} height={18} />, label: "30-day exchange" },
+              { icon: <IconShield width={18} height={18} />, label: "100% Authentic" },
             ].map((perk) => (
               <div
                 key={perk.label}

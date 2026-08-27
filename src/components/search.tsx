@@ -82,25 +82,25 @@ export function SearchOverlay() {
         aria-label="Close search"
       />
 
-      <div className="animate-toast-in relative z-10 w-full max-w-2xl border border-line bg-ink-2 shadow-[12px_12px_0_rgba(0,0,0,0.5)]">
-        {/* input bar */}
-        <div className="flex items-center gap-3 border-b border-line px-5 py-4">
-          <IconSearch width={20} height={20} className="shrink-0 text-dust" />
+      <div className="animate-toast-in relative z-10 w-full max-w-2xl rounded-2xl border border-[#1b2438] bg-[#0e131f] shadow-[0_24px_80px_rgba(0,0,0,0.8)]">
+        <div className="flex items-center gap-3 border-b border-[#1b2438] px-5 py-4">
+          <IconSearch width={20} height={20} className="shrink-0 text-gray-400" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search sneakers, boots, brands…"
-            className="flex-1 bg-transparent text-lg font-medium placeholder:text-dust/50 focus:outline-none"
+            placeholder="Search kicks, tops, brands…"
+            aria-label="Search products"
+            className="flex-1 bg-transparent text-base font-medium text-white placeholder:text-gray-500 focus:outline-none"
           />
-          <span className="hidden text-[10px] font-bold tracking-wider text-dust uppercase sm:inline">
+          <span className="hidden text-[10px] font-bold tracking-widest text-gray-500 uppercase sm:inline">
             ESC to close
           </span>
           <button
             onClick={() => setSearchOpen(false)}
-            className="grid h-8 w-8 shrink-0 place-items-center border border-line text-dust transition-colors hover:border-flame hover:text-flame"
-            aria-label="Close"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#1b2438] text-gray-400 transition-colors hover:border-[#ff3b5c] hover:text-[#ff3b5c]"
+            aria-label="Close search"
           >
             <IconX width={15} height={15} />
           </button>
@@ -119,7 +119,7 @@ export function SearchOverlay() {
                     <button
                       key={p.id}
                       onClick={() => openProduct(p.id)}
-                      className="flex w-full items-center gap-3 border border-transparent px-3 py-2.5 text-left transition-colors hover:border-line hover:bg-ink-3"
+                      className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left transition-colors hover:border-[#1b2438] hover:bg-[#151c2e]"
                     >
                       <div
                         className="h-10 w-10 shrink-0 overflow-hidden"
@@ -132,12 +132,12 @@ export function SearchOverlay() {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{p.name}</p>
-                        <p className="text-xs text-dust">
+                        <p className="truncate text-sm font-semibold text-white">{p.name}</p>
+                        <p className="text-xs text-gray-400">
                           {p.brand} · {p.colorway}
                         </p>
                       </div>
-                      <span className="text-sm font-display text-volt">
+                      <span className="font-display text-sm text-[#00f0ff]">
                         {eur(p.priceCents)}
                       </span>
                     </button>
@@ -149,8 +149,9 @@ export function SearchOverlay() {
 
           {query.trim().length >= 2 && results.length === 0 && (
             <div className="px-5 py-10 text-center">
-              <p className="font-display text-2xl uppercase">No matches</p>
-              <p className="mt-1 text-sm text-dust">
+              <p className="text-4xl mb-3">🔍</p>
+              <p className="font-display text-xl text-white uppercase">No matches found</p>
+              <p className="mt-1 text-sm text-gray-400">
                 Try a brand name, category, or colorway
               </p>
             </div>
@@ -166,10 +167,10 @@ export function SearchOverlay() {
                   <button
                     key={p.id}
                     onClick={() => openProduct(p.id)}
-                    className="flex w-full items-center gap-3.5 border border-transparent px-3 py-3 text-left transition-all hover:border-line hover:bg-ink-3"
+                    className="flex w-full items-center gap-3.5 rounded-xl border border-transparent px-3 py-3 text-left transition-all hover:border-[#1b2438] hover:bg-[#151c2e]"
                   >
                     <div
-                      className="h-14 w-14 shrink-0 overflow-hidden"
+                      className="h-14 w-14 shrink-0 overflow-hidden rounded-lg"
                       style={{ backgroundColor: p.accent }}
                     >
                       <img
@@ -179,25 +180,25 @@ export function SearchOverlay() {
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold tracking-[0.2em] text-dust uppercase">
+                      <p className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase">
                         {p.brand}
                       </p>
-                      <p className="truncate font-display text-lg tracking-wide uppercase">
+                      <p className="truncate font-display text-base font-bold text-white uppercase">
                         {p.name}
                       </p>
                       <div className="flex items-center gap-2">
                         <Stars rating={p.rating} />
-                        <span className="text-xs text-dust">
+                        <span className="text-xs text-gray-400">
                           {p.colorway} · {p.category}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-display text-lg text-volt">
+                    <div className="text-right shrink-0">
+                      <p className="font-display text-base font-bold text-[#00f0ff]">
                         {eur(p.priceCents)}
                       </p>
                       {p.compareAtCents && (
-                        <p className="text-xs text-dust line-through">
+                        <p className="text-xs text-gray-500 line-through">
                           {eur(p.compareAtCents)}
                         </p>
                       )}
@@ -209,12 +210,13 @@ export function SearchOverlay() {
           )}
 
           {query.trim().length < 2 && !showRecents && (
-            <div className="px-5 py-10 text-center">
-              <p className="text-sm text-dust">
-                Start typing to find your next pair…
+            <div className="px-5 py-12 text-center">
+              <p className="text-3xl mb-3">🔎</p>
+              <p className="text-sm font-semibold text-gray-300">
+                Start typing to search kicks, tops, brands…
               </p>
-              <p className="mt-2 text-[10px] font-bold tracking-wider text-dust/60 uppercase">
-                ⌘K to open search anytime
+              <p className="mt-2 text-[11px] font-bold tracking-widest text-gray-600 uppercase">
+                ⌘K · Ctrl+K to open search anytime
               </p>
             </div>
           )}

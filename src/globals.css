@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* ─── Legacy token aliases (backward compat) ───────── */
+@layer base {
+  :root {
+    /* Old tokens remapped to new dark theme */
+    --color-ink:     #07090e;
+    --color-ink-2:   #0e131f;
+    --color-ink-3:   #151c2e;
+    --color-bone:    #f8fafc;
+    --color-dust:    #94a3b8;
+    --color-line:    #1b2438;
+    --color-volt:    #00f0ff;
+    --color-flame:   #ff3b5c;
+  }
+}
+
 @layer base {
   :root {
     --bg-dark: #07090e;
@@ -269,4 +284,64 @@ input[type="range"]::-webkit-slider-thumb:hover {
   height: 2px;
   background: #00f0ff;
   border-radius: 2px;
+}
+
+/* ─── Reveal animation ───────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1), transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Marquee ticker ──────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+}
+
+/* ─── Toast animation ─────────────────────────────────── */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-toast-in {
+  animation: toastIn 0.25s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── Background dot pattern ─────────────────────────── */
+.bg-dots {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ─── Tailwind token shims for legacy class names ─────── */
+.bg-ink    { background-color: #07090e; }
+.bg-ink-2  { background-color: #0e131f; }
+.bg-ink-3  { background-color: #151c2e; }
+.bg-volt   { background-color: #00f0ff; }
+.bg-flame  { background-color: #ff3b5c; }
+.bg-bone   { background-color: #f8fafc; }
+.bg-bone-2 { background-color: #f1f5f9; }
+.text-ink  { color: #07090e; }
+.text-bone { color: #f8fafc; }
+.text-dust { color: #94a3b8; }
+.text-volt { color: #00f0ff; }
+.text-flame { color: #ff3b5c; }
+.border-line { border-color: #1b2438; }
+.border-volt { border-color: #00f0ff; }
+.border-flame { border-color: #ff3b5c; }
+.border-dust { border-color: #94a3b8; }
+.border-bone { border-color: #f8fafc; }
+.divide-line > * + * { border-color: #1b2438; }
+.bg-grid-light {
+  background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

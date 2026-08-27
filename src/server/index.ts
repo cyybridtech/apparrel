@@ -101,18 +101,17 @@ app.get("/api/products/:slug", async (req, res) => {
       .where(eq(productSizes.productId, product.id))
       .orderBy(asc(productSizes.eu));
 
-    // Related products: same category or brand, excluding self
-    const allProducts = await db.select().from(products);
-    const related = allProducts
-      .filter(
-        (p) =>
-          p.id !== product.id &&
-          (p.category === product.category || p.brand === product.brand)
+    // Related products: same category or brand, excluding self — efficient query
+    const relatedRaw = await db
+      .select()
+      .from(products)
+      .where(
+        sql`id != ${product.id} AND (category = ${product.category} OR brand = ${product.brand})`
       )
-      .slice(0, 4);
+      .limit(4);
 
     const relatedWithSizes = await Promise.all(
-      related.map(async (r) => {
+      relatedRaw.map(async (r) => {
         const rSizes = await db
           .select()
           .from(productSizes)
@@ -547,9 +546,13 @@ app.post("/api/admin/products", async (req, res) => {
 app.put("/api/admin/products/:id", async (req, res) => {
   try {
     const productId = Number(req.params.id);
+    if (!productId || isNaN(productId)) {
+      return res.status(400).json({ error: "Invalid product ID" });
+    }
     const {
       name,
       brand,
+      productType,
       category,
       colorway,
       description,
@@ -567,6 +570,7 @@ app.put("/api/admin/products/:id", async (req, res) => {
       .set({
         name,
         brand,
+        ...(productType ? { productType } : {}),
         category,
         colorway,
         description,
@@ -611,6 +615,9 @@ app.put("/api/admin/products/:id", async (req, res) => {
 app.delete("/api/admin/products/:id", async (req, res) => {
   try {
     const productId = Number(req.params.id);
+    if (!productId || isNaN(productId)) {
+      return res.status(400).json({ error: "Invalid product ID" });
+    }
     await db.delete(products).where(eq(products.id, productId));
     res.json({ ok: true });
   } catch (err) {

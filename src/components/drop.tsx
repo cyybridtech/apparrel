@@ -149,11 +149,15 @@ export function DropSection() {
               aria-hidden="true"
             />
             <img
-              src="/images/drop-banner.jpg"
+              src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&h=600&fit=crop&auto=format"
               alt="Drop 08 Static Bloom teaser"
               className="relative w-full -rotate-2 border-2 border-ink object-cover transition-transform duration-500 group-hover:rotate-0"
               width={900}
               height={600}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src =
+                  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=900&h=600&fit=crop";
+              }}
             />
             <span className="absolute -top-5 -right-4 rotate-6 bg-flame px-4 py-2 font-display text-2xl text-ink shadow-[5px_5px_0_rgba(19,19,22,1)]">
               120 pairs

@@ -97,13 +97,14 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <main className="mx-auto min-h-[70vh] max-w-7xl px-4 py-14 sm:px-6">
-        <div className="grid animate-pulse gap-10 lg:grid-cols-2">
-          <div className="aspect-square bg-ink-2" />
-          <div className="space-y-4">
-            <div className="h-4 w-24 bg-ink-2" />
-            <div className="h-10 w-64 bg-ink-2" />
-            <div className="h-6 w-32 bg-ink-2" />
-            <div className="h-24 bg-ink-2" />
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div className="aspect-square shimmer rounded-2xl" />
+          <div className="space-y-4 pt-4">
+            <div className="h-3 w-24 shimmer rounded" />
+            <div className="h-10 w-64 shimmer rounded" />
+            <div className="h-5 w-32 shimmer rounded" />
+            <div className="h-24 shimmer rounded" />
+            <div className="h-12 shimmer rounded-xl" />
           </div>
         </div>
       </main>
@@ -113,19 +114,20 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <main className="mx-auto min-h-[70vh] max-w-7xl px-4 py-14 sm:px-6">
-        <div className="grid place-items-center border border-dashed border-line py-32 text-center">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#1b2438] py-32 text-center gap-5">
+          <span className="text-5xl">👟</span>
           <div>
-            <p className="font-display text-4xl uppercase">Shoe not found</p>
-            <p className="mt-2 text-sm text-dust">
-              This pair might have sold out or doesn&apos;t exist.
+            <p className="font-display text-3xl text-white uppercase tracking-wide">Item not found</p>
+            <p className="mt-2 text-sm text-gray-400 max-w-sm">
+              This item may have sold out or doesn&apos;t exist in our catalog.
             </p>
-            <Link
-              to="/#wall"
-              className="mt-6 inline-flex items-center gap-2 bg-volt px-5 py-3 font-display text-base tracking-wide text-ink uppercase transition-all hover:-translate-y-0.5"
-            >
-              Back to the wall <IconArrow width={16} height={16} />
-            </Link>
           </div>
+          <a
+            href="/#wall"
+            className="btn-cyan inline-flex items-center gap-2 rounded-xl px-6 py-3 font-display text-base tracking-wide uppercase"
+          >
+            Back to the Collection <IconArrow width={16} height={16} />
+          </a>
         </div>
       </main>
     );
@@ -134,17 +136,17 @@ export default function ProductDetailPage() {
   return (
     <main>
       {/* breadcrumb */}
-      <div className="border-b border-line">
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 text-xs text-dust sm:px-6">
-          <Link
-            to="/#wall"
-            className="inline-flex items-center gap-1 transition-colors hover:text-volt"
+      <div className="border-b border-[#1b2438] bg-[#0e131f]">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 text-xs text-gray-400 sm:px-6">
+          <a
+            href="/#wall"
+            className="inline-flex items-center gap-1 transition-colors hover:text-[#00f0ff]"
           >
             <IconChevronLeft width={12} height={12} />
-            The Wall
-          </Link>
-          <span>/</span>
-          <span className="text-bone">{product.name}</span>
+            The Collection
+          </a>
+          <span className="text-gray-600">/</span>
+          <span className="text-white font-semibold">{product.name}</span>
         </div>
       </div>
 
@@ -271,9 +273,9 @@ export default function ProductDetailPage() {
             <Reveal delay={280}>
               <div className="mt-6">
                 <div className="mb-2.5 flex items-center justify-between">
-                  <h3 className="text-[11px] font-bold tracking-[0.22em] uppercase">
-                    Select size (EU)
-                  </h3>
+                <h3 className="text-[11px] font-bold tracking-[0.22em] text-white uppercase">
+                  {(product as any).productType === "tops" ? "Select size" : "Select size (EU)"}
+                </h3>
                   <div className="flex items-center gap-3">
                     {sizeError && (
                       <span className="animate-pop text-[11px] font-bold tracking-wider text-flame uppercase">
@@ -291,34 +293,37 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8">
                   {product.sizes.map((s) => {
-                    const out = s.stock <= 0;
-                    const on = eu === s.eu;
-                    return (
-                      <button
-                        key={s.eu}
-                        disabled={out}
-                        onClick={() => {
-                          setEu(s.eu);
-                          setSizeError(false);
-                        }}
-                        className={`relative border py-3 text-sm font-semibold transition-all active:scale-90 ${
-                          on
-                            ? "border-volt bg-volt text-ink"
-                            : out
-                              ? "cursor-not-allowed border-line text-dust/40 line-through"
-                              : "border-line hover:border-dust hover:text-bone"
-                        }`}
-                      >
-                        {s.eu}
-                        {!out && s.stock <= 2 && (
-                          <span
-                            className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-flame"
-                            title={`Only ${s.stock} left`}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
+                  const out = s.stock <= 0;
+                  const on = eu === s.eu;
+                  const isTops = (product as any).productType === "tops";
+                  const CLOTHING_MAP: Record<number, string> = { 1:"XS",2:"S",3:"M",4:"L",5:"XL",6:"XXL" };
+                  const label = isTops ? (CLOTHING_MAP[s.eu] ?? s.eu) : s.eu;
+                  return (
+                    <button
+                      key={s.eu}
+                      disabled={out}
+                      onClick={() => {
+                        setEu(s.eu);
+                        setSizeError(false);
+                      }}
+                      className={`relative border py-3 text-sm font-bold transition-all active:scale-95 rounded-lg ${
+                        on
+                          ? "border-[#00f0ff] bg-[#00f0ff] text-black"
+                          : out
+                            ? "cursor-not-allowed border-[#1b2438] text-gray-600 line-through"
+                            : "border-[#1b2438] text-gray-300 hover:border-[#00f0ff]/60 hover:text-white"
+                      }`}
+                    >
+                      {label}
+                      {!out && s.stock <= 2 && (
+                        <span
+                          className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#ff3b5c]"
+                          title={`Only ${s.stock} left`}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
                 </div>
                 {selected && selected.stock <= 2 && (
                   <p className="mt-2 text-[11px] font-semibold tracking-wider text-flame uppercase">
@@ -367,26 +372,26 @@ export default function ProductDetailPage() {
 
             {/* perks */}
             <Reveal delay={360}>
-              <div className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-6 text-center">
+              <div className="mt-6 grid grid-cols-3 gap-3 border-t border-[#1b2438] pt-6 text-center">
                 {[
                   {
                     icon: <IconTruck width={20} height={20} />,
-                    label: "Free ship €150+",
+                    label: "Free ship GH₵1,500+",
                   },
                   {
                     icon: <IconRefresh width={20} height={20} />,
-                    label: "30-day returns",
+                    label: "30-day exchange",
                   },
                   {
                     icon: <IconShield width={20} height={20} />,
-                    label: "2-yr warranty",
+                    label: "100% Authentic",
                   },
                 ].map((perk) => (
                   <div
                     key={perk.label}
-                    className="flex flex-col items-center gap-2 text-dust"
+                    className="flex flex-col items-center gap-2 text-gray-400"
                   >
-                    <span className="text-volt">{perk.icon}</span>
+                    <span className="text-[#00f0ff]">{perk.icon}</span>
                     <span className="text-[10px] font-semibold tracking-[0.12em] uppercase">
                       {perk.label}
                     </span>
@@ -399,10 +404,10 @@ export default function ProductDetailPage() {
 
         {/* related products */}
         {related.length > 0 && (
-          <div className="mt-20 border-t border-line pt-14">
+          <div className="mt-20 border-t border-[#1b2438] pt-14">
             <Reveal>
-              <h2 className="font-display text-3xl tracking-wide uppercase">
-                You might also like
+              <h2 className="font-display text-3xl text-white uppercase tracking-tight">
+                You Might Also Like
               </h2>
             </Reveal>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

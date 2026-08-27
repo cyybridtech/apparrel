@@ -5,7 +5,6 @@ import { count, eq, sql } from "drizzle-orm";
 const us = (id: string) =>
   `https://images.unsplash.com/photo-${id}?w=900&h=900&fit=crop&auto=format&q=85`;
 
-// Clothing sizes: 1=XS, 2=S, 3=M, 4=L, 5=XL, 6=XXL
 const CLOTHING_SIZE_MAP: Record<number, string> = {
   1: "XS",
   2: "S",
@@ -61,8 +60,6 @@ const SKY   = "#8FCBF5";
 const SAND  = "#E9C878";
 const CYAN  = "#00f0ff";
 const SLATE = "#64748b";
-const WHITE = "#f8fafc";
-const BLACK = "#1e293b";
 
 const CATALOG: SeedProduct[] = [
   // ─── FOOTWEAR ───────────────────────────────────────────────────────
@@ -81,7 +78,7 @@ const CATALOG: SeedProduct[] = [
     rating: 4.8,
     ratingCount: 412,
     isNew: true,
-    isFeatured: true, // Hero rotating showcase (discount product)
+    isFeatured: true,
     weightGrams: 238,
     terrain: "Road",
     sizes: mkSizes(1, 36, 46),
@@ -479,11 +476,104 @@ const CATALOG: SeedProduct[] = [
 
 let seeding: Promise<void> | null = null;
 
+async function createTablesIfNotExist() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`products\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`slug\` VARCHAR(255) NOT NULL UNIQUE,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`brand\` VARCHAR(255) NOT NULL,
+        \`category\` VARCHAR(255) NOT NULL,
+        \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear',
+        \`colorway\` VARCHAR(255) NOT NULL,
+        \`description\` TEXT NOT NULL,
+        \`image\` TEXT NOT NULL,
+        \`accent\` VARCHAR(50) NOT NULL,
+        \`price_cents\` INT NOT NULL,
+        \`compare_at_cents\` INT,
+        \`rating\` DOUBLE NOT NULL DEFAULT 4.5,
+        \`rating_count\` INT NOT NULL DEFAULT 0,
+        \`is_new\` TINYINT(1) NOT NULL DEFAULT 0,
+        \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0,
+        \`release_year\` INT NOT NULL DEFAULT 2026,
+        \`weight_grams\` INT NOT NULL DEFAULT 280,
+        \`terrain\` VARCHAR(255) NOT NULL DEFAULT 'Street'
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`product_sizes\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`product_id\` INT NOT NULL,
+        \`eu\` INT NOT NULL,
+        \`size_label\` VARCHAR(20) NOT NULL DEFAULT '',
+        \`stock\` INT NOT NULL DEFAULT 0,
+        UNIQUE KEY \`uq_product_size\` (\`product_id\`, \`eu\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`cart_items\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`product_id\` INT NOT NULL,
+        \`eu\` INT NOT NULL,
+        \`qty\` INT NOT NULL DEFAULT 1,
+        \`added_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY \`uq_cart_product_size\` (\`product_id\`, \`eu\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`orders\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`order_no\` VARCHAR(255) NOT NULL UNIQUE,
+        \`customer_name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(255) NOT NULL,
+        \`address\` VARCHAR(255) NOT NULL,
+        \`city\` VARCHAR(255) NOT NULL,
+        \`zip\` VARCHAR(50) NOT NULL,
+        \`subtotal_cents\` INT NOT NULL,
+        \`shipping_cents\` INT NOT NULL,
+        \`total_cents\` INT NOT NULL,
+        \`status\` VARCHAR(50) NOT NULL DEFAULT 'confirmed',
+        \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS \`order_items\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`order_id\` INT NOT NULL,
+        \`product_id\` INT NOT NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`brand\` VARCHAR(255) NOT NULL,
+        \`colorway\` VARCHAR(255) NOT NULL,
+        \`image\` VARCHAR(2048) NOT NULL,
+        \`eu\` INT NOT NULL,
+        \`size_label\` VARCHAR(20) NOT NULL DEFAULT '',
+        \`qty\` INT NOT NULL,
+        \`unit_price_cents\` INT NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // Ensure columns exist on existing databases
+    try { await db.execute(sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`); } catch {}
+    try { await db.execute(sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`); } catch {}
+    try { await db.execute(sql`ALTER TABLE \`product_sizes\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`); } catch {}
+    try { await db.execute(sql`ALTER TABLE \`order_items\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`); } catch {}
+  } catch (err) {
+    console.error("Auto table creation / schema check warning:", err);
+  }
+}
+
 export function ensureSeed(): Promise<void> {
   if (!seeding) {
     seeding = (async () => {
+      await createTablesIfNotExist();
+
       const [row] = await db.select({ n: count() }).from(products);
-      if (row.n > 0) return;
+      if (row && row.n > 0) return;
 
       for (const p of CATALOG) {
         await db.insert(products).values({
