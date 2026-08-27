@@ -1,28 +1,28 @@
-import { db, isDbConfigured } from "../src/db";
-import { cartItems, products, productSizes } from "../src/db/schema";
-import { and, desc, eq } from "drizzle-orm";
-import { ensureSeed } from "../src/db/seed";
-
-async function fetchCart() {
-  const rows = await db
-    .select({ id: cartItems.id, qty: cartItems.qty, eu: cartItems.eu, addedAt: cartItems.addedAt, stock: productSizes.stock, product: products })
-    .from(cartItems)
-    .innerJoin(products, eq(products.id, cartItems.productId))
-    .innerJoin(productSizes, and(eq(productSizes.productId, cartItems.productId), eq(productSizes.eu, cartItems.eu)))
-    .orderBy(desc(cartItems.addedAt), desc(cartItems.id));
-
-  return rows.map((r: any) => ({ id: r.id, qty: r.qty, eu: r.eu, stock: r.stock, addedAt: r.addedAt ? r.addedAt.toISOString() : new Date().toISOString(), product: r.product }));
-}
-
 export default async function handler(req: any, res: any) {
-  if (!isDbConfigured) {
-    return res.status(500).json({
-      error: "DATABASE_URL environment variable is missing on Vercel.",
-    });
-  }
-
   try {
+    const { db, isDbConfigured } = await import("../src/db");
+    const { cartItems, products, productSizes } = await import("../src/db/schema");
+    const { and, desc, eq } = await import("drizzle-orm");
+    const { ensureSeed } = await import("../src/db/seed");
+
+    if (!isDbConfigured) {
+      return res.status(500).json({
+        error: "DATABASE_URL environment variable is missing on Vercel.",
+      });
+    }
+
     await ensureSeed();
+
+    async function fetchCart() {
+      const rows = await db
+        .select({ id: cartItems.id, qty: cartItems.qty, eu: cartItems.eu, addedAt: cartItems.addedAt, stock: productSizes.stock, product: products })
+        .from(cartItems)
+        .innerJoin(products, eq(products.id, cartItems.productId))
+        .innerJoin(productSizes, and(eq(productSizes.productId, cartItems.productId), eq(productSizes.eu, cartItems.eu)))
+        .orderBy(desc(cartItems.addedAt), desc(cartItems.id));
+
+      return rows.map((r: any) => ({ id: r.id, qty: r.qty, eu: r.eu, stock: r.stock, addedAt: r.addedAt ? r.addedAt.toISOString() : new Date().toISOString(), product: r.product }));
+    }
 
     if (req.method === "GET") {
       const items = await fetchCart();
@@ -75,6 +75,10 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method not allowed" });
   } catch (err: any) {
     console.error("/api/cart error", err);
-    return res.status(500).json({ error: "Cart error", details: err?.message || String(err) });
+    return res.status(500).json({
+      error: "Cart error",
+      message: err?.message || String(err),
+      stack: err?.stack || null,
+    });
   }
 }

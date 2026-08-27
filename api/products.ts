@@ -1,20 +1,20 @@
-import { db, isDbConfigured } from "../src/db";
-import { products, productSizes } from "../src/db/schema";
-import { asc } from "drizzle-orm";
-import { ensureSeed } from "../src/db/seed";
-
 export default async function handler(req: any, res: any) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!isDbConfigured) {
-    return res.status(500).json({
-      error: "DATABASE_URL environment variable is missing on Vercel. Please set DATABASE_URL in Vercel Project Settings.",
-    });
-  }
-
   try {
+    const { db, isDbConfigured } = await import("../src/db");
+    const { products, productSizes } = await import("../src/db/schema");
+    const { asc } = await import("drizzle-orm");
+    const { ensureSeed } = await import("../src/db/seed");
+
+    if (!isDbConfigured) {
+      return res.status(500).json({
+        error: "DATABASE_URL environment variable is missing on Vercel.",
+      });
+    }
+
     await ensureSeed();
     const allProducts = await db.select().from(products);
     const allSizes = await db.select().from(productSizes).orderBy(asc(productSizes.eu));
@@ -29,7 +29,8 @@ export default async function handler(req: any, res: any) {
     console.error("GET /api/products failed", err);
     return res.status(500).json({
       error: "Could not load products",
-      details: err?.message || String(err),
+      message: err?.message || String(err),
+      stack: err?.stack || null,
     });
   }
 }
