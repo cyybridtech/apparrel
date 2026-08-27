@@ -566,6 +566,7 @@ async function createTablesIfNotExist() {
   const alters = [
     sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`,
     sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE \`products\` ADD COLUMN \`release_year\` INT NOT NULL DEFAULT 2026`,
     sql`ALTER TABLE \`product_sizes\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
     sql`ALTER TABLE \`order_items\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
   ];
