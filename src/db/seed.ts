@@ -477,8 +477,8 @@ const CATALOG: SeedProduct[] = [
 let seeding: Promise<void> | null = null;
 
 async function createTablesIfNotExist() {
-  try {
-    await db.execute(sql`
+  const ddlStatements = [
+    sql`
       CREATE TABLE IF NOT EXISTS \`products\` (
         \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`slug\` VARCHAR(255) NOT NULL UNIQUE,
@@ -500,9 +500,8 @@ async function createTablesIfNotExist() {
         \`weight_grams\` INT NOT NULL DEFAULT 280,
         \`terrain\` VARCHAR(255) NOT NULL DEFAULT 'Street'
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await db.execute(sql`
+    `,
+    sql`
       CREATE TABLE IF NOT EXISTS \`product_sizes\` (
         \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`product_id\` INT NOT NULL,
@@ -511,9 +510,8 @@ async function createTablesIfNotExist() {
         \`stock\` INT NOT NULL DEFAULT 0,
         UNIQUE KEY \`uq_product_size\` (\`product_id\`, \`eu\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await db.execute(sql`
+    `,
+    sql`
       CREATE TABLE IF NOT EXISTS \`cart_items\` (
         \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`product_id\` INT NOT NULL,
@@ -522,9 +520,8 @@ async function createTablesIfNotExist() {
         \`added_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY \`uq_cart_product_size\` (\`product_id\`, \`eu\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await db.execute(sql`
+    `,
+    sql`
       CREATE TABLE IF NOT EXISTS \`orders\` (
         \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`order_no\` VARCHAR(255) NOT NULL UNIQUE,
@@ -539,9 +536,8 @@ async function createTablesIfNotExist() {
         \`status\` VARCHAR(50) NOT NULL DEFAULT 'confirmed',
         \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await db.execute(sql`
+    `,
+    sql`
       CREATE TABLE IF NOT EXISTS \`order_items\` (
         \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`order_id\` INT NOT NULL,
@@ -555,15 +551,29 @@ async function createTablesIfNotExist() {
         \`qty\` INT NOT NULL,
         \`unit_price_cents\` INT NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
+    `,
+  ];
 
-    // Ensure columns exist on existing databases
-    try { await db.execute(sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`); } catch {}
-    try { await db.execute(sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`); } catch {}
-    try { await db.execute(sql`ALTER TABLE \`product_sizes\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`); } catch {}
-    try { await db.execute(sql`ALTER TABLE \`order_items\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`); } catch {}
-  } catch (err) {
-    console.error("Auto table creation / schema check warning:", err);
+  for (const stmt of ddlStatements) {
+    try {
+      await db.execute(stmt);
+    } catch (e) {
+      console.warn("Table DDL execution note:", e);
+    }
+  }
+
+  // Ensure columns exist on existing databases
+  const alters = [
+    sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`,
+    sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE \`product_sizes\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE \`order_items\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
+  ];
+
+  for (const alt of alters) {
+    try {
+      await db.execute(alt);
+    } catch {}
   }
 }
 
@@ -572,8 +582,15 @@ export function ensureSeed(): Promise<void> {
     seeding = (async () => {
       await createTablesIfNotExist();
 
-      const [row] = await db.select({ n: count() }).from(products);
-      if (row && row.n > 0) return;
+      let hasProducts = false;
+      try {
+        const [row] = await db.select({ n: count() }).from(products);
+        if (row && row.n > 0) hasProducts = true;
+      } catch (err) {
+        console.warn("Products table select count check error:", err);
+      }
+
+      if (hasProducts) return;
 
       for (const p of CATALOG) {
         await db.insert(products).values({
