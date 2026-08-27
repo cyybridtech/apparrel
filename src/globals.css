@@ -303,7 +303,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   100% { transform: translateX(-50%); }
 }
 .marquee-track {
-  animation: marquee 60s linear infinite;
+  animation: marquee 90s linear infinite;
 }
 .marquee-track:hover {
   animation-play-state: paused;
