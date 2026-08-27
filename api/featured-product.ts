@@ -1,7 +1,7 @@
-import { db } from "../src/db";
-import { products, productSizes } from "../src/db/schema";
+import { db } from "../src/db/index.js";
+import { products, productSizes } from "../src/db/schema.js";
 import { asc, eq, sql } from "drizzle-orm";
-import { ensureSeed } from "../src/db/seed";
+import { ensureSeed } from "../src/db/seed.js";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "GET") {
@@ -18,7 +18,6 @@ export default async function handler(req: any, res: any) {
       .limit(1);
 
     if (!featured) {
-      // Fallback: product with a discount or first product
       [featured] = await db
         .select()
         .from(products)
@@ -41,8 +40,11 @@ export default async function handler(req: any, res: any) {
       .orderBy(asc(productSizes.eu));
 
     return res.status(200).json({ product: { ...featured, sizes } });
-  } catch (err) {
+  } catch (err: any) {
     console.error("GET /api/featured-product failed", err);
-    return res.status(500).json({ error: "Could not load featured product" });
+    return res.status(500).json({
+      error: "Could not load featured product",
+      message: err?.message || String(err),
+    });
   }
 }

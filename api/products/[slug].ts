@@ -1,7 +1,7 @@
-import { db } from "../../src/db";
-import { products, productSizes } from "../../src/db/schema";
+import { db } from "../../src/db/index.js";
+import { products, productSizes } from "../../src/db/schema.js";
 import { asc, eq, sql } from "drizzle-orm";
-import { ensureSeed } from "../../src/db/seed";
+import { ensureSeed } from "../../src/db/seed.js";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "GET") {
@@ -28,7 +28,6 @@ export default async function handler(req: any, res: any) {
       .where(eq(productSizes.productId, product.id))
       .orderBy(asc(productSizes.eu));
 
-    // Related products query using SQL filter
     const relatedRaw = await db
       .select()
       .from(products)
@@ -51,8 +50,11 @@ export default async function handler(req: any, res: any) {
     return res
       .status(200)
       .json({ product: { ...product, sizes }, related: relatedWithSizes });
-  } catch (err) {
+  } catch (err: any) {
     console.error("GET /api/products/[slug] failed", err);
-    return res.status(500).json({ error: "Could not load product" });
+    return res.status(500).json({
+      error: "Could not load product",
+      message: err?.message || String(err),
+    });
   }
 }

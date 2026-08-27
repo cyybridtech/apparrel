@@ -1,5 +1,5 @@
-import { db } from "../../../../src/db";
-import { orders } from "../../../../src/db/schema";
+import { db } from "../../../../src/db/index.js";
+import { orders } from "../../../../src/db/schema.js";
 import { eq } from "drizzle-orm";
 
 export default async function handler(req: any, res: any) {
@@ -11,8 +11,8 @@ export default async function handler(req: any, res: any) {
     if (!status) return res.status(400).json({ error: "Status is required" });
     await db.update(orders).set({ status }).where(eq(orders.id, id));
     return res.status(200).json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("PATCH /api/admin/orders/:id/status failed", err);
-    return res.status(500).json({ error: "Failed to update order status" });
+    return res.status(500).json({ error: "Failed to update order status", message: err?.message || String(err) });
   }
 }

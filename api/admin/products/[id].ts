@@ -1,5 +1,5 @@
-import { db } from "../../../src/db";
-import { products, productSizes } from "../../../src/db/schema";
+import { db } from "../../../src/db/index.js";
+import { products, productSizes } from "../../../src/db/schema.js";
 import { and, eq } from "drizzle-orm";
 
 export default async function handler(req: any, res: any) {
@@ -78,8 +78,8 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(405).json({ error: "Method not allowed" });
-  } catch (err) {
+  } catch (err: any) {
     console.error("/api/admin/products/[id] error", err);
-    return res.status(500).json({ error: "Product admin error" });
+    return res.status(500).json({ error: "Product admin error", message: err?.message || String(err) });
   }
 }

@@ -1,7 +1,7 @@
-import { db } from "../src/db";
-import { orders, orderItems, cartItems, products, productSizes } from "../src/db/schema";
+import { db } from "../src/db/index.js";
+import { orders, orderItems, cartItems, products, productSizes } from "../src/db/schema.js";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { ensureSeed } from "../src/db/seed";
+import { ensureSeed } from "../src/db/seed.js";
 
 export default async function handler(req: any, res: any) {
   try {
@@ -51,8 +51,8 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(405).json({ error: "Method not allowed" });
-  } catch (err) {
+  } catch (err: any) {
     console.error("/api/orders error", err);
-    return res.status(500).json({ error: "Orders error" });
+    return res.status(500).json({ error: "Orders error", message: err?.message || String(err) });
   }
 }

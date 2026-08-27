@@ -1,9 +1,9 @@
 export default async function handler(req: any, res: any) {
   try {
-    const { db, isDbConfigured } = await import("../src/db");
-    const { cartItems, products, productSizes } = await import("../src/db/schema");
+    const { db, isDbConfigured } = await import("../src/db/index.js");
+    const { cartItems, products, productSizes } = await import("../src/db/schema.js");
     const { and, desc, eq } = await import("drizzle-orm");
-    const { ensureSeed } = await import("../src/db/seed");
+    const { ensureSeed } = await import("../src/db/seed.js");
 
     if (!isDbConfigured) {
       return res.status(500).json({

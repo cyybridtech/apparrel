@@ -1,8 +1,7 @@
-import { db } from "../../src/db";
-import { products, productSizes } from "../../src/db/schema";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { db } from "../../src/db/index.js";
+import { products, productSizes } from "../../src/db/schema.js";
+import { eq } from "drizzle-orm";
 
-// Clothing sizes: 1=XS, 2=S, 3=M, 4=L, 5=XL, 6=XXL
 const clothingSizeMap: Record<number, string> = { 1: "XS", 2: "S", 3: "M", 4: "L", 5: "XL", 6: "XXL" };
 
 export default async function handler(req: any, res: any) {
@@ -69,8 +68,8 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(200).json({ ok: true, slug });
-  } catch (err) {
+  } catch (err: any) {
     console.error("POST /api/admin/products failed", err);
-    return res.status(500).json({ error: "Failed to create product" });
+    return res.status(500).json({ error: "Failed to create product", message: err?.message || String(err) });
   }
 }
