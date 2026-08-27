@@ -61,7 +61,7 @@ const SAND  = "#E9C878";
 const CYAN  = "#00f0ff";
 const SLATE = "#64748b";
 
-const CATALOG: SeedProduct[] = [
+export const CATALOG: SeedProduct[] = [
   // ─── FOOTWEAR ───────────────────────────────────────────────────────
   {
     slug: "voltage-runner-2",
