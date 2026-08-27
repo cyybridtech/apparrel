@@ -593,26 +593,19 @@ export function ensureSeed(): Promise<void> {
       if (hasProducts) return;
 
       for (const p of CATALOG) {
-        await db.insert(products).values({
-          slug: p.slug,
-          name: p.name,
-          brand: p.brand,
-          productType: p.productType,
-          category: p.category,
-          colorway: p.colorway,
-          description: p.description,
-          image: p.image,
-          accent: p.accent,
-          priceCents: p.priceCents,
-          compareAtCents: p.compareAtCents ?? null,
-          rating: p.rating,
-          ratingCount: p.ratingCount,
-          isNew: p.isNew ?? false,
-          isFeatured: p.isFeatured ?? false,
-          releaseYear: 2026,
-          weightGrams: p.weightGrams,
-          terrain: p.terrain,
-        });
+        await db.execute(sql`
+          INSERT INTO \`products\` (
+            \`slug\`, \`name\`, \`brand\`, \`product_type\`, \`category\`, \`colorway\`,
+            \`description\`, \`image\`, \`accent\`, \`price_cents\`, \`compare_at_cents\`,
+            \`rating\`, \`rating_count\`, \`is_new\`, \`is_featured\`, \`release_year\`,
+            \`weight_grams\`, \`terrain\`
+          ) VALUES (
+            ${p.slug}, ${p.name}, ${p.brand}, ${p.productType}, ${p.category}, ${p.colorway},
+            ${p.description}, ${p.image}, ${p.accent}, ${p.priceCents}, ${p.compareAtCents ?? null},
+            ${p.rating}, ${p.ratingCount}, ${p.isNew ? 1 : 0}, ${p.isFeatured ? 1 : 0}, 2026,
+            ${p.weightGrams}, ${p.terrain}
+          )
+        `);
 
         const [insertedProd] = await db
           .select({ id: products.id })
@@ -621,14 +614,12 @@ export function ensureSeed(): Promise<void> {
           .limit(1);
 
         if (insertedProd) {
-          await db.insert(productSizes).values(
-            p.sizes.map(([eu, stock, sizeLabel]) => ({
-              productId: insertedProd.id,
-              eu,
-              sizeLabel,
-              stock,
-            }))
-          );
+          for (const [eu, stock, sizeLabel] of p.sizes) {
+            await db.execute(sql`
+              INSERT INTO \`product_sizes\` (\`product_id\`, \`eu\`, \`size_label\`, \`stock\`)
+              VALUES (${insertedProd.id}, ${eu}, ${sizeLabel}, ${stock})
+            `);
+          }
         }
       }
     })().catch((err) => {
