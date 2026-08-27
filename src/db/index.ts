@@ -21,21 +21,14 @@ const loadSslCa = (): string | undefined => {
 
 const getPoolConfig = (): mysql.PoolOptions => {
   if (!databaseUrl) {
-    // Return placeholder config so module loading does not crash top-level evaluation
     return { host: "127.0.0.1", user: "root", database: "footwear" };
   }
 
   try {
-    const url = new URL(databaseUrl);
+    // Strip ?ssl=true or &ssl=true boolean params that cause mysql2 to throw "SSL profile must be an object"
+    const sanitizedUrlStr = databaseUrl.replace(/([?&])ssl=(true|false|1|0)/gi, "$1_ssl_flag=$2");
+    const url = new URL(sanitizedUrlStr);
     const sslCa = loadSslCa();
-
-    const isCloud =
-      url.hostname.includes("tidbcloud.com") ||
-      url.hostname.includes("amazonaws.com") ||
-      url.hostname.includes("planetscale") ||
-      url.hostname.includes("aivencloud") ||
-      url.searchParams.has("ssl") ||
-      process.env.NODE_ENV === "production";
 
     const poolConfig: mysql.PoolOptions = {
       host: url.hostname,
@@ -49,16 +42,23 @@ const getPoolConfig = (): mysql.PoolOptions => {
       connectTimeout: 20000,
     };
 
+    // Ensure ssl is ALWAYS an object, never a boolean
     if (sslCa) {
       poolConfig.ssl = { ca: sslCa, rejectUnauthorized: true };
-    } else if (isCloud) {
+    } else {
+      // TiDB Cloud / AWS / PlanetScale require SSL object
       poolConfig.ssl = { minVersion: "TLSv1.2", rejectUnauthorized: false };
     }
 
     return poolConfig;
   } catch (err) {
-    console.error("Failed to parse DATABASE_URL, using URI configuration:", err);
-    return { uri: databaseUrl } as any;
+    console.error("Failed to parse DATABASE_URL:", err);
+    return {
+      host: "127.0.0.1",
+      user: "root",
+      database: "footwear",
+      ssl: { minVersion: "TLSv1.2", rejectUnauthorized: false },
+    };
   }
 };
 
