@@ -1,5 +1,5 @@
-import { db } from "./index";
-import { products, productSizes } from "./schema";
+import { db } from "./index.js";
+import { products, productSizes } from "./schema.js";
 import { count, eq, sql } from "drizzle-orm";
 
 const us = (id: string) =>

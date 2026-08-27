@@ -4,10 +4,10 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../db";
-import { products, productSizes, cartItems, orders, orderItems } from "../db/schema";
-import { ensureSeed } from "../db/seed";
-import type { CartLine, OrderWithItems, ProductWithSizes } from "../lib/types";
+import { db } from "../db/index.js";
+import { products, productSizes, cartItems, orders, orderItems } from "../db/schema.js";
+import { ensureSeed } from "../db/seed.js";
+import type { CartLine, OrderWithItems, ProductWithSizes } from "../lib/types.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
