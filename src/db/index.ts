@@ -6,25 +6,25 @@ import { URL } from "url";
 const databaseUrl = process.env.DATABASE_URL;
 const sslCaEnv = process.env.DATABASE_SSL_CA;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is required");
-}
+export const isDbConfigured = Boolean(databaseUrl);
 
 const loadSslCa = (): string | undefined => {
   if (!sslCaEnv) return undefined;
 
   const looksLikePath = sslCaEnv.startsWith(".") || sslCaEnv.includes("/") || sslCaEnv.endsWith(".pem");
-  if (looksLikePath) {
-    if (fs.existsSync(sslCaEnv)) {
-      return fs.readFileSync(sslCaEnv, "utf8");
-    }
-    console.warn("DATABASE_SSL_CA file not found on disk, attempting raw string fallback.");
+  if (looksLikePath && fs.existsSync(sslCaEnv)) {
+    return fs.readFileSync(sslCaEnv, "utf8");
   }
 
   return sslCaEnv;
 };
 
 const getPoolConfig = (): mysql.PoolOptions => {
+  if (!databaseUrl) {
+    // Return placeholder config so module loading does not crash top-level evaluation
+    return { host: "127.0.0.1", user: "root", database: "footwear" };
+  }
+
   try {
     const url = new URL(databaseUrl);
     const sslCa = loadSslCa();
@@ -52,13 +52,12 @@ const getPoolConfig = (): mysql.PoolOptions => {
     if (sslCa) {
       poolConfig.ssl = { ca: sslCa, rejectUnauthorized: true };
     } else if (isCloud) {
-      // TiDB Cloud and cloud MySQL instances require TLS
       poolConfig.ssl = { minVersion: "TLSv1.2", rejectUnauthorized: false };
     }
 
     return poolConfig;
   } catch (err) {
-    console.error("Failed to parse DATABASE_URL, passing raw connection string:", err);
+    console.error("Failed to parse DATABASE_URL, using URI configuration:", err);
     return { uri: databaseUrl } as any;
   }
 };

@@ -1,4 +1,4 @@
-import { db } from "../src/db";
+import { db, isDbConfigured } from "../src/db";
 import { cartItems, products, productSizes } from "../src/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { ensureSeed } from "../src/db/seed";
@@ -15,8 +15,15 @@ async function fetchCart() {
 }
 
 export default async function handler(req: any, res: any) {
+  if (!isDbConfigured) {
+    return res.status(500).json({
+      error: "DATABASE_URL environment variable is missing on Vercel.",
+    });
+  }
+
   try {
     await ensureSeed();
+
     if (req.method === "GET") {
       const items = await fetchCart();
       return res.status(200).json({ items });
@@ -66,8 +73,8 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(405).json({ error: "Method not allowed" });
-  } catch (err) {
+  } catch (err: any) {
     console.error("/api/cart error", err);
-    return res.status(500).json({ error: "Cart error" });
+    return res.status(500).json({ error: "Cart error", details: err?.message || String(err) });
   }
 }
