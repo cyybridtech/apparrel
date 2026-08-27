@@ -593,34 +593,47 @@ export function ensureSeed(): Promise<void> {
       if (hasProducts) return;
 
       for (const p of CATALOG) {
-        await db.execute(sql`
-          INSERT INTO \`products\` (
-            \`slug\`, \`name\`, \`brand\`, \`product_type\`, \`category\`, \`colorway\`,
-            \`description\`, \`image\`, \`accent\`, \`price_cents\`, \`compare_at_cents\`,
-            \`rating\`, \`rating_count\`, \`is_new\`, \`is_featured\`, \`release_year\`,
-            \`weight_grams\`, \`terrain\`
-          ) VALUES (
-            ${p.slug}, ${p.name}, ${p.brand}, ${p.productType}, ${p.category}, ${p.colorway},
-            ${p.description}, ${p.image}, ${p.accent}, ${p.priceCents}, ${p.compareAtCents ?? null},
-            ${p.rating}, ${p.ratingCount}, ${p.isNew ? 1 : 0}, ${p.isFeatured ? 1 : 0}, 2026,
-            ${p.weightGrams}, ${p.terrain}
-          )
-        `);
-
-        const [insertedProd] = await db
-          .select({ id: products.id })
-          .from(products)
-          .where(eq(products.slug, p.slug))
-          .limit(1);
-
-        if (insertedProd) {
-          for (const [eu, stock, sizeLabel] of p.sizes) {
-            await db.execute(sql`
-              INSERT INTO \`product_sizes\` (\`product_id\`, \`eu\`, \`size_label\`, \`stock\`)
-              VALUES (${insertedProd.id}, ${eu}, ${sizeLabel}, ${stock})
-            `);
-          }
+        try {
+          await db.execute(sql`
+            INSERT INTO \`products\` (
+              \`slug\`, \`name\`, \`brand\`, \`product_type\`, \`category\`, \`colorway\`,
+              \`description\`, \`image\`, \`accent\`, \`price_cents\`, \`compare_at_cents\`,
+              \`rating\`, \`rating_count\`, \`is_new\`, \`is_featured\`, \`release_year\`,
+              \`weight_grams\`, \`terrain\`
+            ) VALUES (
+              ${p.slug}, ${p.name}, ${p.brand}, ${p.productType}, ${p.category}, ${p.colorway},
+              ${p.description}, ${p.image}, ${p.accent}, ${p.priceCents}, ${p.compareAtCents ?? null},
+              ${p.rating}, ${p.ratingCount}, ${p.isNew ? 1 : 0}, ${p.isFeatured ? 1 : 0}, 2026,
+              ${p.weightGrams}, ${p.terrain}
+            )
+            ON DUPLICATE KEY UPDATE
+              \`name\` = VALUES(\`name\`),
+              \`price_cents\` = VALUES(\`price_cents\`),
+              \`is_featured\` = VALUES(\`is_featured\`)
+          `);
+        } catch (insertErr: any) {
+          console.warn(`Product insert warning for ${p.slug}:`, insertErr?.message || insertErr);
         }
+
+        try {
+          const [insertedProd] = await db
+            .select({ id: products.id })
+            .from(products)
+            .where(eq(products.slug, p.slug))
+            .limit(1);
+
+          if (insertedProd) {
+            for (const [eu, stock, sizeLabel] of p.sizes) {
+              try {
+                await db.execute(sql`
+                  INSERT INTO \`product_sizes\` (\`product_id\`, \`eu\`, \`size_label\`, \`stock\`)
+                  VALUES (${insertedProd.id}, ${eu}, ${sizeLabel}, ${stock})
+                  ON DUPLICATE KEY UPDATE \`stock\` = VALUES(\`stock\`), \`size_label\` = VALUES(\`size_label\`)
+                `);
+              } catch {}
+            }
+          }
+        } catch {}
       }
     })().catch((err) => {
       seeding = null;
