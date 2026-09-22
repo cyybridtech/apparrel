@@ -1,41 +1,66 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { StoreProvider } from "@/lib/store";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { QuickView } from "@/components/quickview";
-import { CartDrawer } from "@/components/cartdrawer";
-import { SearchOverlay } from "@/components/search";
-import { SizeGuide } from "@/components/sizeguide";
-import { Toasts } from "@/components/ui";
-import { BackToTop } from "@/components/backtotop";
-import HomePage from "@/pages/home";
-import ProductPage from "@/pages/product-detail";
-import OrdersPage from "@/pages/orders";
-import WishlistPage from "@/pages/wishlist";
-import { AdminPage } from "@/pages/admin";
+import React, { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastProvider } from "./context/ToastContext";
+import { WishlistProvider } from "./context/WishlistContext";
+import { CartProvider } from "./context/CartContext";
+import { AnnouncementBar } from "./components/layout/AnnouncementBar";
+import { Navbar } from "./components/layout/Navbar";
+import { Footer } from "./components/layout/Footer";
+import { SearchOverlay } from "./components/shop/SearchOverlay";
+import { CartDrawer } from "./components/cart/CartDrawer";
+import { CheckoutModal } from "./components/cart/CheckoutModal";
+
+// Pages
+import { HomePage } from "./pages/HomePage";
+import { ShopPage } from "./pages/ShopPage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { WishlistPage } from "./pages/WishlistPage";
+import { OrderTrackingPage } from "./pages/OrderTrackingPage";
+import { AdminPortalPage } from "./pages/AdminPortalPage";
 
 export default function App() {
+  const [searchOpen, setSearchOpen] = useState(false);
+
   return (
-    <Router>
-      <StoreProvider>
-        <div className="min-h-screen bg-[#07090e] text-[#f3f4f6]">
-          <Header />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/product/:slug" element={<ProductPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-          </Routes>
-          <Footer />
-          <QuickView />
-          <CartDrawer />
-          <SearchOverlay />
-          <SizeGuide />
-          <Toasts />
-          <BackToTop />
-        </div>
-      </StoreProvider>
-    </Router>
+    <BrowserRouter>
+      <ToastProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <div className="min-h-screen flex flex-col bg-[#f8f9fa] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
+              {/* Top Announcement Bar */}
+              <AnnouncementBar />
+
+              {/* Main Minimal Luxury Navbar */}
+              <Navbar onOpenSearch={() => setSearchOpen(true)} />
+
+              {/* Page Content */}
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/product/:slug" element={<ProductDetailPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
+                  <Route path="/track" element={<OrderTrackingPage />} />
+                  <Route path="/admin" element={<AdminPortalPage />} />
+                  <Route path="/secret-admin" element={<AdminPortalPage />} />
+                  <Route path="*" element={<HomePage />} />
+                </Routes>
+              </main>
+
+              {/* Modern Luxury Footer */}
+              <Footer />
+
+              {/* Global Modals & Drawers */}
+              <SearchOverlay
+                isOpen={searchOpen}
+                onClose={() => setSearchOpen(false)}
+              />
+              <CartDrawer />
+              <CheckoutModal />
+            </div>
+          </CartProvider>
+        </WishlistProvider>
+      </ToastProvider>
+    </BrowserRouter>
   );
 }

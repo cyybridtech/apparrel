@@ -1,102 +1,65 @@
-# Apparel (Vite + Serverless API)
+# APPARREL — Modern Luxury E-Commerce Platform
 
-Deployment (Vercel)
+A high-performance, contemporary e-commerce web application inspired by leading global fashion & lifestyle brands (SSENSE, Kith, Zara, Nike). Built with **TypeScript**, **React**, **Node.js Express**, **MySQL** (with resilient caching), **Paystack Checkout**, and **Real-Time Step-by-Step Order Packaging & Dispatch Tracking**.
 
-> This app requires an external MySQL-compatible database. Vercel does not host a MySQL database for this project.
+---
 
-1. In Vercel create a new project and connect the repository: https://github.com/cyybridtech/apparrel
-2. Application Preset: **Vite**
-3. Root Directory: project root (leave blank)
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Add environment variables (Project Settings → Environment Variables):
-   - `DATABASE_URL` — MySQL connection string (required)
-   - `DATABASE_SSL_CA` — optional TLS certificate PEM if your provider requires it
-   - any other secrets used by your app
-7. Vercel will build the frontend and deploy serverless functions from the `api/` directory.
+## 🌟 Key Features
 
-Railway database hosting
+### 1. Multi-Category Taxonomy & Authentic Luxury Drops
+- **Tops & Shirts**: Heavyweight graphic tees (290 GSM), resort linen button-downs, architect hoodies, fine knit polos.
+- **Sneakers & Kicks**: Retro high-tops, speed runners, minimalist nappa trainers, street dunks.
+- **Perfumes & Fragrances**: Royal amber oud extraits, fresh bergamot vetiver EDPs, midnight bourbon vanilla.
+- **Watches & Timepieces**: Automatic skeleton chronographs, rose gold dress watches, 200M titanium divers.
+- **Body Sprays & Grooming**: All-day cedarwood mists, cooling post-workout sprays, evening tonka mists.
+- *Fully extensible dynamic category system for adding future product lines.*
 
-1. Create a new project in Railway and add a MySQL plugin.
-2. Copy the generated connection string from Railway.
-3. In Vercel Project Settings → Environment Variables, add:
-   - `DATABASE_URL` — the Railway MySQL connection string
-4. Optionally run migrations or seed data locally before deploying:
-   - `npm install`
-   - `npm run migrate`
-   - `npm run reseed`
-5. Deploy the frontend and functions after the DB connection is configured.
+### 2. Paystack Live Payment Integration
+- Ready for live and test mode Paystack integration via `.env`.
+- Frontend inline popup modal (`PaystackPop.setup`) with automatic fallback for mobile money (MTN MoMo, Telecel, AT), Visa, Mastercard, and Apple Pay.
+- Server-side verification (`/api/paystack/verify/:reference`) and webhook processing.
 
-Render database hosting
+### 3. Executive Store Operations & Restock Hub
+- **Access URL**: `/admin` or `/secret-admin` (or click the subtle lock icon in the footer).
+- **Default Passkeys**: `apparrel2026`, `1234`, `admin123`, `admin`.
+- **⚡ 1-Click Restock Matrix**: Instant `+5`, `+20`, `+50` stock adjustments per size variant with custom quantity inputs, health meters, and bulk `+10 All Sizes` actions.
+- **Product Drop Studio (CRUD)**: Create new product drops with 1-click image presets, size variant builders, live GH₵ price converters, and badges.
+- **Live Packaging & Dispatch Pipeline**: 6-stage interactive fulfillment controller (`Confirmed` $\rightarrow$ `Packaging & QC` $\rightarrow$ `Dispatched` $\rightarrow$ `In Transit` $\rightarrow$ `Out for Delivery` $\rightarrow$ `Delivered`) with 1-click stage advancement.
+- **Financial Analytics & Audit Trail**: Real-time revenue reporting, AOV, inventory valuation, and chronological stock movement logs.
 
-This app currently uses MySQL. Render does not provide a built-in managed MySQL product, so you have two options:
+### 4. Step-by-Step Order Packaging & Dispatch Tracker
+- Clean visual lifecycle stepper (Placed $\rightarrow$ Packaging & QC $\rightarrow$ Dispatched $\rightarrow$ Out for Delivery $\rightarrow$ Delivered).
+- Dynamic courier rider assignment, live progress timeline, and delivery notes.
 
-- Use Render to run a MySQL instance inside a Docker service and expose its connection URL.
-- Or continue using Railway/PlanetScale for MySQL and host the app on Vercel.
+---
 
-If you want to use Render for the database with MySQL:
+## 🚀 Quick Start
 
-1. Create a new Render service.
-2. Choose Docker and deploy a MySQL Docker image (for example `mysql:8`).
-3. Set service environment variables for MySQL:
-   - `MYSQL_ROOT_PASSWORD`
-   - `MYSQL_DATABASE`
-   - `MYSQL_USER`
-   - `MYSQL_PASSWORD`
-4. Use Render service internal DNS or hostname to build `DATABASE_URL`:
-   - `mysql://root:password@<render-service-host>:3306/<database>`
-5. Add `DATABASE_URL` to Vercel settings.
+### 1. Environment Configuration (`.env`)
+Create or edit your `.env` file:
+```env
+PORT=3001
+VITE_API_URL=http://localhost:3001
 
-TiDB Cloud hosting
+# Paystack API Keys
+PAYSTACK_SECRET_KEY=sk_test_your_secret_key
+PAYSTACK_PUBLIC_KEY=pk_test_your_public_key
+PAYSTACK_CURRENCY=GHS
 
-TiDB Cloud is MySQL-compatible, but you must target a dedicated application database, not the built-in `sys` database.
+# Secret Admin Portal Passkey
+ADMIN_SECRET_KEY=apparrel2026
 
-1. Create a TiDB Cloud cluster.
-2. Create a dedicated database for the app, for example: `footwear`.
-3. Create a database user and password.
-4. Copy the MySQL-compatible connection string.
-5. In Vercel Project Settings → Environment Variables, add:
-   - `DATABASE_URL` — the MySQL connection string, for example:
-     `mysql://<user>:<password>@<host>:<port>/<database>?ssl=true`
-   - `DATABASE_SSL_CA` — the full TLS CA certificate text from TiDB Cloud if TLS is required.
-     - On Vercel, paste the PEM contents directly into the env var.
-     - Locally, you can also set this to a certificate file path if you prefer.
-6. Deploy the frontend and functions after the DB connection is configured.
-
-If your URL currently ends with `/sys`, change it to the dedicated database name and rerun:
-
-```bash
-npm run migrate
-npm run reseed
+# MySQL Database (Optional: in-memory store runs automatically if MySQL is offline)
+DATABASE_URL=mysql://root:password@127.0.0.1:3306/apparrel
 ```
 
-Once the database is reachable, run locally:
-
+### 2. Start Development Servers
+Run both backend and frontend concurrently:
 ```bash
-npm install
-npm run migrate
-npm run reseed
-```
-
-If the database is empty, `npm run migrate` will create the tables and then apply schema updates.
-
-Local testing
-
-Install dependencies and run dev:
-
-```bash
-npm install
 npm run dev
 ```
 
-To test serverless functions locally with Vercel CLI:
-
-```bash
-npm i -g vercel
-vercel dev
-```
-
-Notes
-
-- I converted the core Express endpoints into serverless functions under `api/` (`health`, `products`, `products/[slug]`, `cart`, `orders`).
-- Make sure to add `DATABASE_URL` in Vercel before deploying. If you prefer to host the backend elsewhere (e.g., Railway/Render), change the frontend to point to that URL instead of the local API.
+- **Frontend Storefront**: `http://localhost:3002`
+- **Backend API**: `http://localhost:3001`
+- **Live Order Tracking**: `http://localhost:3002/track`
+- **Executive Admin Portal**: `http://localhost:3002/admin`

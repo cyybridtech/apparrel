@@ -1,646 +1,841 @@
-import { db } from "./index.js";
-import { products, productSizes } from "./schema.js";
-import { count, eq, sql } from "drizzle-orm";
-
-const us = (id: string) =>
-  `https://images.unsplash.com/photo-${id}?w=900&h=900&fit=crop&auto=format&q=85`;
-
-const CLOTHING_SIZE_MAP: Record<number, string> = {
-  1: "XS",
-  2: "S",
-  3: "M",
-  4: "L",
-  5: "XL",
-  6: "XXL",
-};
-
-function mkSizes(seed: number, from: number, to: number): Array<[number, number, string]> {
-  const out: Array<[number, number, string]> = [];
-  for (let eu = from; eu <= to; eu++) {
-    const raw = (eu * 13 + seed * 31) % 12;
-    const label = eu >= 36 ? `EU${eu}` : CLOTHING_SIZE_MAP[eu] ?? `${eu}`;
-    out.push([eu, raw >= 10 ? 0 : raw, label]);
-  }
-  return out;
-}
-
-function mkClothingSizes(seed: number): Array<[number, number, string]> {
-  return [1, 2, 3, 4, 5, 6].map((n) => {
-    const raw = (n * 17 + seed * 23) % 15;
-    return [n, raw === 0 ? 0 : raw, CLOTHING_SIZE_MAP[n]];
-  });
-}
-
-type SeedProduct = {
+export interface InitialProduct {
   slug: string;
   name: string;
   brand: string;
-  productType: "footwear" | "tops";
-  category: string;
-  colorway: string;
+  category: "tops" | "sneakers" | "perfumes" | "watches" | "body-sprays";
+  subCategory: string;
   description: string;
-  image: string;
-  accent: string;
-  priceCents: number;
+  features: string[];
+  priceCents: number; // e.g. 45000 = GHS 450.00
   compareAtCents?: number;
+  images: string[];
+  colorway: string;
   rating: number;
   ratingCount: number;
   isNew?: boolean;
   isFeatured?: boolean;
-  weightGrams: number;
-  terrain: string;
-  sizes: Array<[number, number, string]>;
-};
+  isTrending?: boolean;
+  badge?: string;
+  gender?: string;
+  sku: string;
+  sizes: { label: string; stock: number }[];
+}
 
-const VOLT  = "#D8F34A";
-const FLAME = "#FF6A3D";
-const LILAC = "#BFAFF5";
-const MINT  = "#8FE3B8";
-const SKY   = "#8FCBF5";
-const SAND  = "#E9C878";
-const CYAN  = "#00f0ff";
-const SLATE = "#64748b";
-
-export const CATALOG: SeedProduct[] = [
-  // ─── FOOTWEAR ───────────────────────────────────────────────────────
+export const INITIAL_CATEGORIES = [
   {
-    slug: "voltage-runner-2",
-    name: "Voltage Runner 2",
-    brand: "AXIOM",
-    productType: "footwear",
-    category: "Road",
-    colorway: "Ink / Volt",
-    description: "Our fastest daily trainer. A nitrogen-injected midsole returns 87% of your energy while the volt outsole makes sure everyone sees you coming.",
-    image: us("1542291026-7eec264c27ff"),
-    accent: VOLT,
-    priceCents: 149000,
-    compareAtCents: 189000,
-    rating: 4.8,
-    ratingCount: 412,
-    isNew: true,
-    isFeatured: true,
-    weightGrams: 238,
-    terrain: "Road",
-    sizes: mkSizes(1, 36, 46),
+    slug: "all",
+    name: "All Collections",
+    description: "Browse our entire curated catalog of luxury streetwear, footwear, fragrances, and timepieces.",
+    icon: "Sparkles",
+    itemCount: 22,
+    featured: true,
   },
   {
-    slug: "marathon-elite",
-    name: "Marathon Elite",
-    brand: "AXIOM",
-    productType: "footwear",
-    category: "Road",
-    colorway: "Solar Red",
-    description: "Carbon-plated race day weapon. Built for sub-3 marathons and personal bests, with a rocker geometry that rolls you forward whether you like it or not.",
-    image: us("1606107557195-0e29a4b5b4aa"),
-    accent: FLAME,
-    priceCents: 189000,
-    compareAtCents: 220000,
-    rating: 4.9,
-    ratingCount: 268,
-    weightGrams: 199,
-    terrain: "Road",
-    sizes: mkSizes(2, 36, 46),
+    slug: "tops",
+    name: "Tops & Shirts",
+    description: "Premium heavyweight tees, luxury button-downs, hoodies, and refined knitwear.",
+    icon: "Shirt",
+    itemCount: 6,
+    featured: true,
+    bannerImage: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    slug: "court-ghost",
-    name: "Court Ghost",
-    brand: "KOVA",
-    productType: "footwear",
-    category: "Court",
-    colorway: "Bone / Orange",
-    description: "A low-cut court classic with a herringbone grip pattern and a toe box that survives even the ugliest kick serves. Quiet colorway, loud game.",
-    image: us("1595950653106-6c9ebd614d3a"),
-    accent: LILAC,
-    priceCents: 119000,
-    rating: 4.6,
-    ratingCount: 531,
-    weightGrams: 305,
-    terrain: "Court",
-    sizes: mkSizes(3, 36, 46),
+    slug: "sneakers",
+    name: "Sneakers & Kicks",
+    description: "High-heat retro basketball kicks, luxury trainers, and all-terrain lifestyle runners.",
+    icon: "Footprints",
+    itemCount: 5,
+    featured: true,
+    bannerImage: "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    slug: "rim-rattler",
-    name: "Rim Rattler",
-    brand: "KOVA",
-    productType: "footwear",
-    category: "Court",
-    colorway: "Navy / Gold",
-    description: "High-top performance built for the paint. Lateral containment ankle collar and a pebax plate that springs your first step past any defender.",
-    image: us("1608231387042-720250b22ea8"),
-    accent: SAND,
-    priceCents: 159000,
-    rating: 4.7,
-    ratingCount: 189,
-    isNew: true,
-    weightGrams: 345,
-    terrain: "Court",
-    sizes: mkSizes(4, 37, 46),
+    slug: "perfumes",
+    name: "Perfumes & Scents",
+    description: "Niche artisanal extraits, opulent amber ouds, and crisp citrus oceanic essences.",
+    icon: "Flame",
+    itemCount: 4,
+    featured: true,
+    bannerImage: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    slug: "static-low",
-    name: "Static Low",
-    brand: "STATIC",
-    productType: "footwear",
-    category: "Skate",
-    colorway: "Black / Gum",
-    description: "Stripped-back skate shoe engineered to last. Impact Zone foam in the heel absorbs 3-stair slams; the canvas upper just gets cooler with age.",
-    image: us("1600185365926-3a2ce3cdb9eb"),
-    accent: MINT,
-    priceCents: 89000,
-    rating: 4.4,
-    ratingCount: 743,
-    weightGrams: 310,
-    terrain: "Skate",
-    sizes: mkSizes(5, 36, 46),
+    slug: "watches",
+    name: "Watches & Time",
+    description: "Precision automatic chronographs, sapphire crystal steel, and minimalist leather straps.",
+    icon: "Watch",
+    itemCount: 4,
+    featured: true,
+    bannerImage: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    slug: "grind-mid",
-    name: "Grind Mid",
-    brand: "STATIC",
-    productType: "footwear",
-    category: "Skate",
-    colorway: "Suede Brown / White",
-    description: "Suede-wrapped mid-top for technical skaters who need ankle support without sacrificing board feel. The vulcanised flat sole gives you nothing but the board.",
-    image: us("1491553895911-0055eca6402d"),
-    accent: SAND,
-    priceCents: 99000,
-    compareAtCents: 119000,
-    rating: 4.5,
-    ratingCount: 612,
-    weightGrams: 325,
-    terrain: "Skate",
-    sizes: mkSizes(6, 36, 45),
-  },
-  {
-    slug: "cloud-knit",
-    name: "Cloud Knit",
-    brand: "PLUME",
-    productType: "footwear",
-    category: "Lifestyle",
-    colorway: "Dove / Lilac",
-    description: "One-piece featherweight knit that wraps your foot like a sock and looks better than a sneaker. Worn in and worn out.",
-    image: us("1578662996442-48f60103fc96"),
-    accent: LILAC,
-    priceCents: 109000,
-    rating: 4.3,
-    ratingCount: 920,
-    weightGrams: 195,
-    terrain: "Street",
-    sizes: mkSizes(7, 36, 46),
-  },
-  {
-    slug: "velvet-runner",
-    name: "Velvet Runner",
-    brand: "PLUME",
-    productType: "footwear",
-    category: "Lifestyle",
-    colorway: "Dusty Rose / Cream",
-    description: "Plume's most polarising shoe: velvet upper, a memory-foam bed and an 80s-runner sole. Goes with dresses, joggers and absolutely nothing.",
-    image: us("1516478177764-9fe5bd7e9717"),
-    accent: "#F5A8C8",
-    priceCents: 129000,
-    rating: 4.2,
-    ratingCount: 385,
-    weightGrams: 222,
-    terrain: "Street",
-    sizes: mkSizes(8, 36, 46),
-  },
-  {
-    slug: "trail-surge",
-    name: "Trail Surge",
-    brand: "DRAFT",
-    productType: "footwear",
-    category: "Trail",
-    colorway: "Olive / Sky",
-    description: "All-terrain grip outsole with 4mm lugs, a waterproof membrane and enough cushion to handle rocky ridge runs in the Volta Region.",
-    image: us("1542838132-92c53300491e"),
-    accent: MINT,
-    priceCents: 169000,
-    rating: 4.6,
-    ratingCount: 204,
-    weightGrams: 298,
-    terrain: "Trail",
-    sizes: mkSizes(9, 36, 46),
-  },
-  {
-    slug: "wheat-field-boot",
-    name: "Wheat Field Boot",
-    brand: "HALCYON",
-    productType: "footwear",
-    category: "Boots",
-    colorway: "Wheat / Honey",
-    description: "Full-grain leather combat boot with a lugged commando sole. Wears in over six months of daily use until it fits like a second skin.",
-    image: us("1542291026-7eec264c27ff"),
-    accent: SAND,
-    priceCents: 199000,
-    compareAtCents: 249000,
-    rating: 4.8,
-    ratingCount: 167,
-    weightGrams: 620,
-    terrain: "Street",
-    sizes: mkSizes(10, 38, 46),
-  },
-  {
-    slug: "sandal-drift",
-    name: "Drift Sandal",
-    brand: "PLUME",
-    productType: "footwear",
-    category: "Sandals",
-    colorway: "Natural / Sand",
-    description: "Minimal strap sandal on a 30mm cork-EVA platform. The footbed shapes to your foot after two days of wear.",
-    image: us("1603487742131-4160ec999306"),
-    accent: SKY,
-    priceCents: 79000,
-    rating: 4.1,
-    ratingCount: 288,
-    weightGrams: 180,
-    terrain: "Beach",
-    sizes: mkSizes(11, 36, 42),
-  },
-  {
-    slug: "foam-slide-pro",
-    name: "Foam Slide Pro",
-    brand: "AXIOM",
-    productType: "footwear",
-    category: "Sandals",
-    colorway: "Ink / Volt",
-    description: "Post-run recovery slide with AXIOM's nitrogen-expanded foam underfoot. You will never wear flip-flops again.",
-    image: us("1556906781-9be3cefca6af"),
-    accent: VOLT,
-    priceCents: 59000,
-    rating: 4.4,
-    ratingCount: 1203,
-    weightGrams: 140,
-    terrain: "Recovery",
-    sizes: mkSizes(12, 36, 46),
-  },
-  {
-    slug: "turf-striker",
-    name: "Turf Striker",
-    brand: "AXIOM",
-    productType: "footwear",
-    category: "Turf",
-    colorway: "Black / Electric",
-    description: "Multi-stud artificial turf boot for the fast lane. Herringbone bottom for grip on astro and firm ground, lightweight for quick turns.",
-    image: us("1579952363873-27f3bade9f55"),
-    accent: CYAN,
-    priceCents: 129000,
-    compareAtCents: 159000,
-    rating: 4.5,
-    ratingCount: 341,
-    weightGrams: 260,
-    terrain: "Turf",
-    sizes: mkSizes(13, 36, 46),
-  },
-  {
-    slug: "pool-slide",
-    name: "Pool Slide",
-    brand: "KOVA",
-    productType: "footwear",
-    category: "Sandals",
-    colorway: "Navy / White",
-    description: "The poolside essential. Single-band EVA slide with anti-slip ridges and a waterproof logo deboss.",
-    image: us("1588099872483-df4f604e5b7b"),
-    accent: SKY,
-    priceCents: 49000,
-    rating: 4.0,
-    ratingCount: 550,
-    weightGrams: 110,
-    terrain: "Water",
-    sizes: mkSizes(14, 36, 46),
-  },
-  {
-    slug: "retro-runner",
-    name: "Retro Runner",
-    brand: "HALCYON",
-    productType: "footwear",
-    category: "Lifestyle",
-    colorway: "Cream / Green",
-    description: "1970s distance runner silhouette with a modern EVA stack. The chunky waffle outsole is purely aesthetic — and purely correct.",
-    image: us("1560769629-975ec94e6a86"),
-    accent: MINT,
-    priceCents: 139000,
-    compareAtCents: 169000,
-    rating: 4.6,
-    ratingCount: 478,
-    weightGrams: 275,
-    terrain: "Street",
-    sizes: mkSizes(15, 36, 46),
-  },
-
-  // ─── TOPS / APPAREL ─────────────────────────────────────────────────
-  {
-    slug: "kicks-ghana-club-tee",
-    name: "KICKS GHANA Club Tee",
-    brand: "KICKS GHANA",
-    productType: "tops",
-    category: "Club T-Shirts",
-    colorway: "Obsidian / Cyan",
-    description: "The official KICKS GHANA club tee. 100% Ghanaian cotton with a heavyweight 220gsm fabric, oversized silhouette, and an electric cyan graphic print.",
-    image: us("1521572163474-6864f9cf17ab"),
-    accent: CYAN,
-    priceCents: 8500,
-    rating: 4.9,
-    ratingCount: 230,
-    isNew: true,
-    weightGrams: 200,
-    terrain: "Lifestyle",
-    sizes: mkClothingSizes(1),
-  },
-  {
-    slug: "axiom-tech-tee",
-    name: "AXIOM Tech Tee",
-    brand: "AXIOM",
-    productType: "tops",
-    category: "Shirts",
-    colorway: "White / Volt",
-    description: "Moisture-wicking performance tee. DryFlex fabric + reflective AXIOM logo for early morning runs in Accra.",
-    image: us("1562175091-073a551a5665"),
-    accent: VOLT,
-    priceCents: 7500,
-    compareAtCents: 9500,
-    rating: 4.7,
-    ratingCount: 188,
-    isNew: true,
-    weightGrams: 160,
-    terrain: "Road",
-    sizes: mkClothingSizes(2),
-  },
-  {
-    slug: "halcyon-linen-shirt",
-    name: "HALCYON Linen Shirt",
-    brand: "HALCYON",
-    productType: "tops",
-    category: "Designer Shirts",
-    colorway: "Sand / Ecru",
-    description: "Premium 100% Italian linen relaxed-fit shirt. Perfect with our Wheat Field Boot. Minimal stitching, clean collar, handmade buttons.",
-    image: us("1594938298870-c12b7ae01671"),
-    accent: SAND,
-    priceCents: 24500,
-    rating: 4.8,
-    ratingCount: 95,
-    weightGrams: 230,
-    terrain: "Lifestyle",
-    sizes: mkClothingSizes(3),
-  },
-  {
-    slug: "static-skate-hoodie",
-    name: "STATIC Skate Hoodie",
-    brand: "STATIC",
-    productType: "tops",
-    category: "Long Sleeves",
-    colorway: "Charcoal / White",
-    description: "Heavyweight 350gsm French terry hoodie with a kangaroo pocket, brushed fleece inside, and the STATIC crown logo on the chest.",
-    image: us("1556821840-3a63f15732ce"),
-    accent: SLATE,
-    priceCents: 19500,
-    compareAtCents: 24000,
-    rating: 4.6,
-    ratingCount: 312,
-    weightGrams: 500,
-    terrain: "Skate",
-    sizes: mkClothingSizes(4),
-  },
-  {
-    slug: "kova-game-day-jersey",
-    name: "KOVA Game Day Jersey",
-    brand: "KOVA",
-    productType: "tops",
-    category: "Club T-Shirts",
-    colorway: "Navy / Gold",
-    description: "Basketball mesh jersey with KOVA side-panel branding. Sublimated print, moisture-wicking weave, available in full Ghana Premier League colourways.",
-    image: us("1542296332-686e9e30e27e"),
-    accent: SAND,
-    priceCents: 12500,
-    rating: 4.5,
-    ratingCount: 410,
-    weightGrams: 180,
-    terrain: "Court",
-    sizes: mkClothingSizes(5),
-  },
-  {
-    slug: "plume-oversized-tee",
-    name: "PLUME Oversized Tee",
-    brand: "PLUME",
-    productType: "tops",
-    category: "Designer Shirts",
-    colorway: "Lilac / Cream",
-    description: "Boxy drop-shoulder tee in a featherweight slub fabric. Minimal PLUME wordmark at the hem. The kind of shirt that looks good with anything.",
-    image: us("1503342217505-b0a15ec3261c"),
-    accent: LILAC,
-    priceCents: 13500,
-    rating: 4.4,
-    ratingCount: 275,
-    isNew: true,
-    weightGrams: 175,
-    terrain: "Street",
-    sizes: mkClothingSizes(6),
-  },
-  {
-    slug: "draft-trail-longsleeve",
-    name: "DRAFT Trail Long Sleeve",
-    brand: "DRAFT",
-    productType: "tops",
-    category: "Long Sleeves",
-    colorway: "Olive / Stone",
-    description: "UPF 50+ sun-protection base layer. 4-way stretch nylon blend, flatlock seams, zippered chest pocket. Designed for Ghana's coastal trail runs.",
-    image: us("1542291026-7eec264c27ff"),
-    accent: MINT,
-    priceCents: 11000,
-    compareAtCents: 14000,
-    rating: 4.7,
-    ratingCount: 142,
-    weightGrams: 210,
-    terrain: "Trail",
-    sizes: mkClothingSizes(7),
-  },
-  {
-    slug: "kicks-ghana-varsity",
-    name: "KICKS GHANA Varsity",
-    brand: "KICKS GHANA",
-    productType: "tops",
-    category: "Long Sleeves",
-    colorway: "Black / Cyan",
-    description: "Premium varsity crewneck sweatshirt with embroidered KICKS GHANA crest on the chest and sleeve. 300gsm fleece-backed cotton.",
-    image: us("1503342217505-b0a15ec3261c"),
-    accent: CYAN,
-    priceCents: 22000,
-    rating: 4.9,
-    ratingCount: 88,
-    isNew: true,
-    weightGrams: 450,
-    terrain: "Lifestyle",
-    sizes: mkClothingSizes(8),
+    slug: "body-sprays",
+    name: "Body Sprays & Mist",
+    description: "Invigorating all-day body mists, signature woody sprays, and grooming essentials.",
+    icon: "Droplets",
+    itemCount: 3,
+    featured: true,
+    bannerImage: "https://images.unsplash.com/photo-1615397349754-cfa2066a298e?q=80&w=1200&auto=format&fit=crop",
   },
 ];
 
-let seeding: Promise<void> | null = null;
+export const INITIAL_PRODUCTS: InitialProduct[] = [
+  // ─── TOPS & SHIRTS ──────────────────────────────────────────
+  {
+    slug: "heavyweight-oversized-noir-tee",
+    name: "Heavyweight Boxy Noir Tee",
+    brand: "APPARREL STUDIO",
+    category: "tops",
+    subCategory: "Graphic Tees",
+    description: "Crafted from custom 290 GSM combed organic cotton with a structured drop-shoulder drape, ribbed collar, and minimal puff-print typography on the spine.",
+    features: [
+      "100% Combed Heavyweight Organic Cotton (290 GSM)",
+      "Structured boxy silhouette with relaxed drop shoulder",
+      "Reinforced twin-needle collar stitching that never sags",
+      "Garment dyed & pre-shrunk for an enduring vintage feel",
+    ],
+    priceCents: 42000, // GHS 420.00
+    compareAtCents: 55000,
+    images: [
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Washed Obsidian",
+    rating: 4.9,
+    ratingCount: 38,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "BESTSELLER",
+    gender: "Unisex",
+    sku: "TOP-NOIR-290",
+    sizes: [
+      { label: "S", stock: 15 },
+      { label: "M", stock: 24 },
+      { label: "L", stock: 18 },
+      { label: "XL", stock: 10 },
+      { label: "XXL", stock: 6 },
+    ],
+  },
+  {
+    slug: "monochrome-resort-linen-shirt",
+    name: "Monochrome Camp Collar Linen Shirt",
+    brand: "MAISON LIN",
+    category: "tops",
+    subCategory: "Button Downs",
+    description: "Effortlessly breezy camp-collar shirt woven from pure French flax linen. Features mother-of-pearl buttons and a clean straight hem designed to be worn untucked.",
+    features: [
+      "100% Pure French Flax Linen",
+      "Relaxed Cuban / Camp open collar",
+      "Natural mother-of-pearl engraved buttons",
+      "Breathable moisture-wicking weave for tropical climates",
+    ],
+    priceCents: 68000,
+    compareAtCents: 85000,
+    images: [
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Chalk Off-White",
+    rating: 4.8,
+    ratingCount: 22,
+    isNew: true,
+    isFeatured: false,
+    isTrending: true,
+    badge: "NEW ARRIVAL",
+    gender: "Men",
+    sku: "TOP-LINEN-WHT",
+    sizes: [
+      { label: "S", stock: 10 },
+      { label: "M", stock: 16 },
+      { label: "L", stock: 12 },
+      { label: "XL", stock: 8 },
+    ],
+  },
+  {
+    slug: "french-terry-arch-hoodie",
+    name: "Architect Heavy French Terry Hoodie",
+    brand: "APPARREL STUDIO",
+    category: "tops",
+    subCategory: "Hoodies",
+    description: "480 GSM dense loopback French terry hoodie engineered with a double-layered hood without drawstrings, seamless kangaroo pocket, and hidden cuff thumbholes.",
+    features: [
+      "480 GSM High-Density Loopback Cotton Terry",
+      "Double-layered structured hood (no drawstrings)",
+      "Concealed side-seam pockets with bar-tack reinforcement",
+      "Heavyweight ribbed waistband and cuffs",
+    ],
+    priceCents: 89000,
+    compareAtCents: 110000,
+    images: [
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Slate Heather Grey",
+    rating: 4.95,
+    ratingCount: 45,
+    isNew: false,
+    isFeatured: true,
+    isTrending: true,
+    badge: "LIMITED DROP",
+    gender: "Unisex",
+    sku: "TOP-HD-TERRY",
+    sizes: [
+      { label: "S", stock: 8 },
+      { label: "M", stock: 14 },
+      { label: "L", stock: 20 },
+      { label: "XL", stock: 12 },
+    ],
+  },
+  {
+    slug: "knit-merino-blend-polo",
+    name: "Fine-Gauge Knit Ribbed Polo",
+    brand: "ATELIER K",
+    category: "tops",
+    subCategory: "Polos",
+    description: "Ultra-fine gauge ribbed knit polo blending Australian merino wool and silk-touch modal. Features an open placket and refined ribbed trims.",
+    features: [
+      "70% Combed Cotton, 30% Fine Merino Blend",
+      "Seamless buttonless Johnny collar design",
+      "Breathable horizontal micro-rib texture",
+      "Tailored modern cut with gentle taper",
+    ],
+    priceCents: 72000,
+    compareAtCents: 90000,
+    images: [
+      "https://images.unsplash.com/photo-1625910513413-7e10884d0800?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Midnight Navy",
+    rating: 4.75,
+    ratingCount: 19,
+    isNew: false,
+    isFeatured: false,
+    isTrending: false,
+    badge: undefined,
+    gender: "Men",
+    sku: "TOP-POLO-KNIT",
+    sizes: [
+      { label: "M", stock: 15 },
+      { label: "L", stock: 18 },
+      { label: "XL", stock: 10 },
+    ],
+  },
+  {
+    slug: "vintage-washed-olive-overshirt",
+    name: "Workwear Twill Utility Overshirt",
+    brand: "APPARREL STUDIO",
+    category: "tops",
+    subCategory: "Jackets & Overshirts",
+    description: "Rugged yet refined heavy cotton twill overshirt with twin gusset chest pockets, matte black enamel snaps, and garment enzyme wash.",
+    features: [
+      "340 GSM 100% Cotton Moleskin Twill",
+      "Heavy duty snap button front closure",
+      "Dual chest patch pockets with hidden pen slot",
+      "Reinforced elbows for durability",
+    ],
+    priceCents: 85000,
+    compareAtCents: 105000,
+    images: [
+      "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Washed Military Olive",
+    rating: 4.89,
+    ratingCount: 27,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "NEW DROP",
+    gender: "Unisex",
+    sku: "TOP-OVR-OLV",
+    sizes: [
+      { label: "S", stock: 10 },
+      { label: "M", stock: 15 },
+      { label: "L", stock: 12 },
+      { label: "XL", stock: 8 },
+    ],
+  },
+  {
+    slug: "acid-wash-vintage-graphic-tee",
+    name: "Metropolis Heavy Graphic Acid Tee",
+    brand: "STREET ARCHIVE",
+    category: "tops",
+    subCategory: "Graphic Tees",
+    description: "Custom vintage mineral wash tee featuring high-density distressed screenprinted architectural graphics across the chest and back.",
+    features: [
+      "260 GSM Single Jersey Cotton",
+      "Vintage hand-applied mineral wash",
+      "Cracked vintage ink screenprint",
+      "Relaxed skate box fit",
+    ],
+    priceCents: 46000,
+    compareAtCents: 58000,
+    images: [
+      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Vintage Acid Smoke",
+    rating: 4.91,
+    ratingCount: 34,
+    isNew: true,
+    isFeatured: false,
+    isTrending: true,
+    badge: "POPULAR",
+    gender: "Unisex",
+    sku: "TOP-ACD-SMK",
+    sizes: [
+      { label: "S", stock: 12 },
+      { label: "M", stock: 20 },
+      { label: "L", stock: 16 },
+      { label: "XL", stock: 10 },
+    ],
+  },
 
-async function createTablesIfNotExist() {
-  const ddlStatements = [
-    sql`
-      CREATE TABLE IF NOT EXISTS \`products\` (
-        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-        \`slug\` VARCHAR(255) NOT NULL UNIQUE,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`brand\` VARCHAR(255) NOT NULL,
-        \`category\` VARCHAR(255) NOT NULL,
-        \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear',
-        \`colorway\` VARCHAR(255) NOT NULL,
-        \`description\` TEXT NOT NULL,
-        \`image\` TEXT NOT NULL,
-        \`accent\` VARCHAR(50) NOT NULL,
-        \`price_cents\` INT NOT NULL,
-        \`compare_at_cents\` INT,
-        \`rating\` DOUBLE NOT NULL DEFAULT 4.5,
-        \`rating_count\` INT NOT NULL DEFAULT 0,
-        \`is_new\` TINYINT(1) NOT NULL DEFAULT 0,
-        \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0,
-        \`release_year\` INT NOT NULL DEFAULT 2026,
-        \`weight_grams\` INT NOT NULL DEFAULT 280,
-        \`terrain\` VARCHAR(255) NOT NULL DEFAULT 'Street'
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `,
-    sql`
-      CREATE TABLE IF NOT EXISTS \`product_sizes\` (
-        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-        \`product_id\` INT NOT NULL,
-        \`eu\` INT NOT NULL,
-        \`size_label\` VARCHAR(20) NOT NULL DEFAULT '',
-        \`stock\` INT NOT NULL DEFAULT 0,
-        UNIQUE KEY \`uq_product_size\` (\`product_id\`, \`eu\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `,
-    sql`
-      CREATE TABLE IF NOT EXISTS \`cart_items\` (
-        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-        \`product_id\` INT NOT NULL,
-        \`eu\` INT NOT NULL,
-        \`qty\` INT NOT NULL DEFAULT 1,
-        \`added_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY \`uq_cart_product_size\` (\`product_id\`, \`eu\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `,
-    sql`
-      CREATE TABLE IF NOT EXISTS \`orders\` (
-        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-        \`order_no\` VARCHAR(255) NOT NULL UNIQUE,
-        \`customer_name\` VARCHAR(255) NOT NULL,
-        \`email\` VARCHAR(255) NOT NULL,
-        \`address\` VARCHAR(255) NOT NULL,
-        \`city\` VARCHAR(255) NOT NULL,
-        \`zip\` VARCHAR(50) NOT NULL,
-        \`subtotal_cents\` INT NOT NULL,
-        \`shipping_cents\` INT NOT NULL,
-        \`total_cents\` INT NOT NULL,
-        \`status\` VARCHAR(50) NOT NULL DEFAULT 'confirmed',
-        \`created_at\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `,
-    sql`
-      CREATE TABLE IF NOT EXISTS \`order_items\` (
-        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-        \`order_id\` INT NOT NULL,
-        \`product_id\` INT NOT NULL,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`brand\` VARCHAR(255) NOT NULL,
-        \`colorway\` VARCHAR(255) NOT NULL,
-        \`image\` VARCHAR(2048) NOT NULL,
-        \`eu\` INT NOT NULL,
-        \`size_label\` VARCHAR(20) NOT NULL DEFAULT '',
-        \`qty\` INT NOT NULL,
-        \`unit_price_cents\` INT NOT NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `,
-  ];
+  // ─── SNEAKERS & KICKS ───────────────────────────────────────
+  {
+    slug: "retro-high-court-heritage-sneakers",
+    name: "Court Heritage 85 High-Top Sneaker",
+    brand: "KICKS GH",
+    category: "sneakers",
+    subCategory: "Retro High Tops",
+    description: "Premium full-grain tumbled leather high-tops featuring vintage sail midsoles, perforated toe boxes, and responsive air-cushioned cupsoles for all-day streetwear comfort.",
+    features: [
+      "Full-Grain Italian Tumbled Leather Upper",
+      "Heritage encapsulated air-sole unit in heel",
+      "Padded high-cut collar with soft micro-suede lining",
+      "High-traction herringbone rubber outsole",
+    ],
+    priceCents: 145000, // GHS 1,450.00
+    compareAtCents: 185000,
+    images: [
+      "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Bred Noir / Gym Red",
+    rating: 4.96,
+    ratingCount: 84,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "HOT DROP",
+    gender: "Unisex",
+    sku: "SNK-CRT-85",
+    sizes: [
+      { label: "EU 40", stock: 6 },
+      { label: "EU 41", stock: 12 },
+      { label: "EU 42", stock: 18 },
+      { label: "EU 43", stock: 15 },
+      { label: "EU 44", stock: 10 },
+      { label: "EU 45", stock: 5 },
+    ],
+  },
+  {
+    slug: "phantom-speed-runner-v3",
+    name: "Phantom Speed Aero Runner V3",
+    brand: "AERO LAB",
+    category: "sneakers",
+    subCategory: "Performance Runners",
+    description: "Engineered seamless monofilament mesh upper resting on a nitrogen-infused super-critical foam midsole with an exposed carbon fiber stability shank.",
+    features: [
+      "Monofilament lightweight aero mesh upper",
+      "Nitrogen-injected supercritical rebound foam",
+      "Full-length carbon composite transition plate",
+      "Continental grade wet-grip rubber lugs",
+    ],
+    priceCents: 132000,
+    compareAtCents: 160000,
+    images: [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1608231387042-66d1773070a5?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Neon Crimson / Core Black",
+    rating: 4.88,
+    ratingCount: 61,
+    isNew: false,
+    isFeatured: true,
+    isTrending: true,
+    badge: "TOP RATED",
+    gender: "Unisex",
+    sku: "SNK-AERO-V3",
+    sizes: [
+      { label: "EU 40", stock: 8 },
+      { label: "EU 41", stock: 14 },
+      { label: "EU 42", stock: 22 },
+      { label: "EU 43", stock: 18 },
+      { label: "EU 44", stock: 9 },
+    ],
+  },
+  {
+    slug: "minimalist-low-nappa-trainer",
+    name: "Clean Nappa Minimalist Low Trainer",
+    brand: "STUDIO BLANC",
+    category: "sneakers",
+    subCategory: "Luxury Low Tops",
+    description: "Sleek low-profile luxury sneaker handmade in Portugal from buttery smooth white calfskin nappa, finished with discreet gold foil heel numbering and Margom rubber soles.",
+    features: [
+      "100% Full-grain buttery white calfskin",
+      "Authentic Italian Margom stitched cupsole",
+      "Calfskin leather interior lining with memory foam insole",
+      "Discreet gold-stamped serial code on outer heel",
+    ],
+    priceCents: 158000,
+    compareAtCents: 195000,
+    images: [
+      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Triple Pure White",
+    rating: 4.92,
+    ratingCount: 39,
+    isNew: true,
+    isFeatured: false,
+    isTrending: true,
+    badge: "PREMIUM",
+    gender: "Unisex",
+    sku: "SNK-NAP-WHT",
+    sizes: [
+      { label: "EU 39", stock: 5 },
+      { label: "EU 40", stock: 8 },
+      { label: "EU 41", stock: 15 },
+      { label: "EU 42", stock: 16 },
+      { label: "EU 43", stock: 12 },
+      { label: "EU 44", stock: 6 },
+    ],
+  },
+  {
+    slug: "retro-dunk-low-coast-blue",
+    name: "Coastline Street Dunk Low",
+    brand: "KICKS GH",
+    category: "sneakers",
+    subCategory: "Skate Lows",
+    description: "Two-tone retro skate silhouette with reinforced overlays, plush padded mesh tongue, and durable cupsole construction built for everyday rotation.",
+    features: [
+      "Durable synthetic & smooth leather panelling",
+      "Plush padded collar and breathable mesh tongue",
+      "Signature pivot-circle traction pattern",
+      "Includes two sets of laces (Sail and Coast Blue)",
+    ],
+    priceCents: 118000,
+    compareAtCents: 140000,
+    images: [
+      "https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Coastline Blue / Sail White",
+    rating: 4.79,
+    ratingCount: 52,
+    isNew: false,
+    isFeatured: false,
+    isTrending: true,
+    badge: "TRENDING",
+    gender: "Unisex",
+    sku: "SNK-DNK-BLU",
+    sizes: [
+      { label: "EU 40", stock: 10 },
+      { label: "EU 41", stock: 14 },
+      { label: "EU 42", stock: 20 },
+      { label: "EU 43", stock: 16 },
+      { label: "EU 44", stock: 8 },
+    ],
+  },
+  {
+    slug: "chunky-trail-runner-shadow",
+    name: "Terrain Nomad Chunky Trail Runner",
+    brand: "AERO LAB",
+    category: "sneakers",
+    subCategory: "Trail & Lifestyle",
+    description: "Multi-layered ripstop and rubberized mudguards on a sculptured Vibram Megagrip lug outsole for heavy street aesthetics.",
+    features: [
+      "Water-repellent ripstop & TPU structural cage",
+      "Vibram Megagrip high-traction outsole",
+      "Speed-lacing toggle lock system",
+      "Ortholite moisture-wicking sockliner",
+    ],
+    priceCents: 165000,
+    compareAtCents: 200000,
+    images: [
+      "https://images.unsplash.com/photo-1539185441755-769473a23570?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Shadow Charcoal / Volt",
+    rating: 4.93,
+    ratingCount: 31,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "LIMITED",
+    gender: "Unisex",
+    sku: "SNK-TRL-NMD",
+    sizes: [
+      { label: "EU 40", stock: 6 },
+      { label: "EU 41", stock: 10 },
+      { label: "EU 42", stock: 14 },
+      { label: "EU 43", stock: 12 },
+      { label: "EU 44", stock: 6 },
+    ],
+  },
 
-  for (const stmt of ddlStatements) {
-    try {
-      await db.execute(stmt);
-    } catch (e) {
-      console.warn("Table DDL execution note:", e);
-    }
-  }
+  // ─── PERFUMES & FRAGRANCES ─────────────────────────────────
+  {
+    slug: "royal-amber-oud-extrait",
+    name: "Royal Amber & Smoked Oud Extrait",
+    brand: "PARFUMS D'OR",
+    category: "perfumes",
+    subCategory: "Extrait De Parfum",
+    description: "An opulent, highly concentrated 35% extrait opening with golden saffron and cardamom, blooming into Cambodian agarwood, velvety rose damascena, and smoky ambergris.",
+    features: [
+      "Concentration: Extrait de Parfum (35% Oil Concentration)",
+      "Top Notes: Golden Saffron, Szechuan Cardamom, Bergamot",
+      "Heart Notes: Cambodian Oud, Taif Rose, Tonka Bean",
+      "Base Notes: Ambergris, Smoky Cedar, Madagascar Vanilla",
+      "Long-lasting sillage (12+ hours projection)",
+    ],
+    priceCents: 125000, // GHS 1,250.00
+    compareAtCents: 165000,
+    images: [
+      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Amber Flacon with Gold Cap",
+    rating: 4.97,
+    ratingCount: 76,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "BESTSELLER",
+    gender: "Unisex",
+    sku: "PRF-OUD-EXT",
+    sizes: [
+      { label: "50ml", stock: 12 },
+      { label: "100ml", stock: 18 },
+    ],
+  },
+  {
+    slug: "mediterranean-bergamot-vetiver-edp",
+    name: "Soleil Bergamot & Haiti Vetiver EDP",
+    brand: "MAISON LIN",
+    category: "perfumes",
+    subCategory: "Eau De Parfum",
+    description: "Crisp, radiant citrus bursts blended with sparkling sea salt, crushed pink peppercorn, and earth-rich Haitian vetiver. The ultimate fresh signature scent.",
+    features: [
+      "Concentration: Eau de Parfum (22% Oil)",
+      "Top Notes: Calabrian Bergamot, Lemon Zest, Sea Salt",
+      "Heart Notes: Pink Pepper, Orange Blossom, Sage",
+      "Base Notes: Haitian Vetiver, White Musk, Driftwood",
+    ],
+    priceCents: 98000,
+    compareAtCents: 120000,
+    images: [
+      "https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Frosted Crystal & Silver",
+    rating: 4.86,
+    ratingCount: 41,
+    isNew: false,
+    isFeatured: false,
+    isTrending: true,
+    badge: "SIGNATURE",
+    gender: "Unisex",
+    sku: "PRF-VET-EDP",
+    sizes: [
+      { label: "50ml", stock: 14 },
+      { label: "100ml", stock: 20 },
+    ],
+  },
+  {
+    slug: "midnight-vanilla-bourbon-parfum",
+    name: "Midnight Vanilla & Spiced Tobacco Parfum",
+    brand: "PARFUMS D'OR",
+    category: "perfumes",
+    subCategory: "Gourmand Parfum",
+    description: "Dark, seductive and warm. Aged bourbon oak barrels infused with cured Havana tobacco leaves, rich black orchid, and decadent Tahitian vanilla cream.",
+    features: [
+      "Top Notes: Honeyed Cinnamon, Cured Tobacco Leaf",
+      "Heart Notes: Black Orchid, Roasted Cocoa Nib, Cacao",
+      "Base Notes: Bourbon Vanilla, Benzoin Resin, Dry Woods",
+    ],
+    priceCents: 110000,
+    compareAtCents: 140000,
+    images: [
+      "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Midnight Obsidian Flask",
+    rating: 4.91,
+    ratingCount: 33,
+    isNew: true,
+    isFeatured: true,
+    isTrending: false,
+    badge: "LIMITED",
+    gender: "Unisex",
+    sku: "PRF-VAN-BRB",
+    sizes: [
+      { label: "50ml", stock: 10 },
+      { label: "100ml", stock: 15 },
+    ],
+  },
+  {
+    slug: "santal-leather-smoked-iris",
+    name: "Santal 33 Smoked Iris Extrait",
+    brand: "ATELIER K",
+    category: "perfumes",
+    subCategory: "Woody Extrait",
+    description: "An intoxicating blend of creamy Australian sandalwood, dry papyrus, violet accord, and supple Tuscan leather.",
+    features: [
+      "Concentration: Extrait de Parfum (30% Oil)",
+      "Top Notes: Australian Sandalwood, Cardamom",
+      "Heart Notes: Florentine Iris, Violet Leaf, Papyrus",
+      "Base Notes: Cedarwood, Leather, Cashmeran",
+    ],
+    priceCents: 135000,
+    compareAtCents: 170000,
+    images: [
+      "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Smoked Glass & Wooden Cap",
+    rating: 4.94,
+    ratingCount: 58,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "NICHE",
+    gender: "Unisex",
+    sku: "PRF-SNT-33",
+    sizes: [
+      { label: "50ml", stock: 8 },
+      { label: "100ml", stock: 12 },
+    ],
+  },
 
-  // Ensure ALL required columns exist on existing database tables unconditionally
-  const alters = [
-    sql`ALTER TABLE \`products\` ADD COLUMN \`product_type\` VARCHAR(50) NOT NULL DEFAULT 'footwear'`,
-    sql`ALTER TABLE \`products\` ADD COLUMN \`is_featured\` TINYINT(1) NOT NULL DEFAULT 0`,
-    sql`ALTER TABLE \`products\` ADD COLUMN \`release_year\` INT NOT NULL DEFAULT 2026`,
-    sql`ALTER TABLE \`product_sizes\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
-    sql`ALTER TABLE \`order_items\` ADD COLUMN \`size_label\` VARCHAR(20) NOT NULL DEFAULT ''`,
-  ];
+  // ─── WATCHES & TIMEPIECES ─────────────────────────────────
+  {
+    slug: "automatic-chronograph-chronos-stealth",
+    name: "Chronos Stealth Automatic 42mm",
+    brand: "VORTEX HOROLOGY",
+    category: "watches",
+    subCategory: "Automatic Chronograph",
+    description: "Crafted from aerospace-grade 316L stainless steel with a scratch-resistant anti-reflective sapphire crystal, ceramic tachymeter bezel, and Japanese self-winding automatic movement with 48h power reserve.",
+    features: [
+      "Japanese Automatic Mechanical Movement (28,800 vph)",
+      "42mm Aerospace 316L Surgical Stainless Steel Case",
+      "Double-domed Sapphire Crystal with AR Coating",
+      "100M / 10 ATM Water Resistance with Screw-down Crown",
+      "Luminescent Swiss Super-LumiNova BGW9 Hands",
+    ],
+    priceCents: 245000, // GHS 2,450.00
+    compareAtCents: 310000,
+    images: [
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Matte Anthracite Steel",
+    rating: 4.98,
+    ratingCount: 48,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "MASTERPIECE",
+    gender: "Men",
+    sku: "WTC-CHRN-42",
+    sizes: [
+      { label: "42mm Steel Bracelet", stock: 10 },
+      { label: "42mm Leather Strap Bundle", stock: 6 },
+    ],
+  },
+  {
+    slug: "minimalist-rose-gold-sapphire-watch",
+    name: "Minimalist Heritage Rose Gold 38mm",
+    brand: "VORTEX HOROLOGY",
+    category: "watches",
+    subCategory: "Dress Watches",
+    description: "Ultra-slim 6.8mm profile watch with a sunray brushed silver dial, rose gold PVD case, and supple Italian vegetable-tanned full-grain leather strap.",
+    features: [
+      "Ultra-Slim 6.8mm Case Profile",
+      "Sunburst Silver Dial with Diamond-cut Hands",
+      "Handmade Italian Vegetable Tanned Leather",
+      "Swiss Ronda Precision Quartz Movement",
+      "50M Water Resistance",
+    ],
+    priceCents: 165000,
+    compareAtCents: 210000,
+    images: [
+      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Rose Gold / Cognac Tan",
+    rating: 4.84,
+    ratingCount: 29,
+    isNew: false,
+    isFeatured: false,
+    isTrending: true,
+    badge: "CLASSIC",
+    gender: "Unisex",
+    sku: "WTC-MNL-38",
+    sizes: [
+      { label: "38mm Unisex Fit", stock: 12 },
+    ],
+  },
+  {
+    slug: "abyss-diver-titanium-200m",
+    name: "Abyss Diver 200M Matte Titanium",
+    brand: "VORTEX HOROLOGY",
+    category: "watches",
+    subCategory: "Diver Watches",
+    description: "Built for extreme depth and urban durability. Grade 2 lightweight titanium case, 120-click unidirectional ceramic dive bezel, and helium release valve.",
+    features: [
+      "Grade 2 Hypoallergenic Lightweight Titanium Case",
+      "200M / 20 ATM Deep Water Resistance",
+      "120-Click Ceramic Matte Dive Bezel",
+      "Reinforced FKM Rubber Dive Strap + Titanium Bracelet",
+    ],
+    priceCents: 285000,
+    compareAtCents: 350000,
+    images: [
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Matte Titanium Grey / Deep Sea Black",
+    rating: 4.95,
+    ratingCount: 37,
+    isNew: true,
+    isFeatured: true,
+    isTrending: false,
+    badge: "LIMITED",
+    gender: "Men",
+    sku: "WTC-DIV-200",
+    sizes: [
+      { label: "44mm Titanium Fit", stock: 8 },
+    ],
+  },
+  {
+    slug: "skeleton-tourbillon-automatic-steel",
+    name: "Astral Open-Heart Skeleton 41mm",
+    brand: "VORTEX HOROLOGY",
+    category: "watches",
+    subCategory: "Skeleton Automatics",
+    description: "Exposed architectural balance wheel movement featuring dual-barrel mainspring, 52-hour power reserve, and integrated H-link steel bracelet.",
+    features: [
+      "Open-work dial with skeletonized bridges",
+      "Integrated 316L stainless steel bracelet",
+      "See-through sapphire exhibition caseback",
+      "52-hour reserve automatic movement",
+    ],
+    priceCents: 320000,
+    compareAtCents: 390000,
+    images: [
+      "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Silver Steel / Royal Blue Hands",
+    rating: 4.99,
+    ratingCount: 26,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "EXCLUSIVE",
+    gender: "Men",
+    sku: "WTC-SKL-41",
+    sizes: [
+      { label: "41mm Integrated Steel", stock: 5 },
+    ],
+  },
 
-  for (const alt of alters) {
-    try {
-      await db.execute(alt);
-    } catch {}
-  }
-}
-
-export function ensureSeed(): Promise<void> {
-  if (!seeding) {
-    seeding = (async () => {
-      await createTablesIfNotExist();
-
-      let needsSeed = false;
-      try {
-        const prods = await db.select().from(products).limit(1);
-        if (prods.length === 0) needsSeed = true;
-      } catch (err) {
-        console.warn("Full products column select warning, attempting auto-seed:", err);
-        needsSeed = true;
-      }
-
-      if (!needsSeed) return;
-
-      for (const p of CATALOG) {
-        try {
-          await db.execute(sql`
-            INSERT INTO \`products\` (
-              \`slug\`, \`name\`, \`brand\`, \`product_type\`, \`category\`, \`colorway\`,
-              \`description\`, \`image\`, \`accent\`, \`price_cents\`, \`compare_at_cents\`,
-              \`rating\`, \`rating_count\`, \`is_new\`, \`is_featured\`, \`release_year\`,
-              \`weight_grams\`, \`terrain\`
-            ) VALUES (
-              ${p.slug}, ${p.name}, ${p.brand}, ${p.productType}, ${p.category}, ${p.colorway},
-              ${p.description}, ${p.image}, ${p.accent}, ${p.priceCents}, ${p.compareAtCents ?? null},
-              ${p.rating}, ${p.ratingCount}, ${p.isNew ? 1 : 0}, ${p.isFeatured ? 1 : 0}, 2026,
-              ${p.weightGrams}, ${p.terrain}
-            )
-            ON DUPLICATE KEY UPDATE
-              \`name\` = VALUES(\`name\`),
-              \`price_cents\` = VALUES(\`price_cents\`),
-              \`is_featured\` = VALUES(\`is_featured\`)
-          `);
-        } catch (insertErr: any) {
-          console.warn(`Product insert warning for ${p.slug}:`, insertErr?.message || insertErr);
-        }
-
-        try {
-          const [insertedProd] = await db
-            .select({ id: products.id })
-            .from(products)
-            .where(eq(products.slug, p.slug))
-            .limit(1);
-
-          if (insertedProd) {
-            for (const [eu, stock, sizeLabel] of p.sizes) {
-              try {
-                await db.execute(sql`
-                  INSERT INTO \`product_sizes\` (\`product_id\`, \`eu\`, \`size_label\`, \`stock\`)
-                  VALUES (${insertedProd.id}, ${eu}, ${sizeLabel}, ${stock})
-                  ON DUPLICATE KEY UPDATE \`stock\` = VALUES(\`stock\`), \`size_label\` = VALUES(\`size_label\`)
-                `);
-              } catch {}
-            }
-          }
-        } catch {}
-      }
-    })().catch((err) => {
-      seeding = null;
-      throw err;
-    });
-  }
-  return seeding;
-}
+  // ─── BODY SPRAYS & GROOMING ────────────────────────────────
+  {
+    slug: "cedar-black-pepper-all-day-mist",
+    name: "Atlas Cedar & Crushed Black Pepper Body Mist",
+    brand: "GROOM & BOTANY",
+    category: "body-sprays",
+    subCategory: "Body Mists",
+    description: "A fast-absorbing, long-wearing micro-fine mist formulated with organic aloe leaf, mineral electrolytes, Moroccan atlas cedarwood, and cracked black peppercorn.",
+    features: [
+      "All-day skin & garment refreshing micro-mist",
+      "Infused with organic aloe vera & zinc mineral complex",
+      "Non-sticky, zero aerosol formulation (environmentally clean)",
+      "Key notes: Atlas Cedarwood, Pink Peppercorn, Cardamom",
+    ],
+    priceCents: 22000, // GHS 220.00
+    compareAtCents: 30000,
+    images: [
+      "https://images.unsplash.com/photo-1615397349754-cfa2066a298e?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Frosted Amber Bottle",
+    rating: 4.88,
+    ratingCount: 64,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "BEST VALUE",
+    gender: "Unisex",
+    sku: "SPR-CED-250",
+    sizes: [
+      { label: "250ml", stock: 35 },
+    ],
+  },
+  {
+    slug: "aquatic-sea-salt-performance-spray",
+    name: "Aquatic Ocean Drift Performance Body Spray",
+    brand: "GROOM & BOTANY",
+    category: "body-sprays",
+    subCategory: "Performance Sprays",
+    description: "Cooling post-workout and daily energizing body spray featuring dead sea minerals, Japanese spearmint, and crisp coastal ozone notes that eliminate odors at the molecular level.",
+    features: [
+      "Natural Odor Neutralizing Complex (Odor-Lock)",
+      "Cooling Menthol & Sea Mineral boost",
+      "Safe for gym gear, sneakers, and skin",
+      "Key notes: Coastal Ozone, Spearmint, Sea Salt, Driftwood",
+    ],
+    priceCents: 19500,
+    compareAtCents: 26000,
+    images: [
+      "https://images.unsplash.com/photo-1585386959984-a4155224a1ad?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1526947425960-945c6e72858f?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Oceanic Matte Blue",
+    rating: 4.82,
+    ratingCount: 53,
+    isNew: false,
+    isFeatured: false,
+    isTrending: true,
+    badge: "GYM FAVORITE",
+    gender: "Unisex",
+    sku: "SPR-SEA-200",
+    sizes: [
+      { label: "200ml", stock: 40 },
+    ],
+  },
+  {
+    slug: "amber-smoke-night-grooming-mist",
+    name: "Nocturne Amber & Warm Tonka Body Mist",
+    brand: "GROOM & BOTANY",
+    category: "body-sprays",
+    subCategory: "Evening Mists",
+    description: "An intimate evening body spray with warm amber, roasted tonka bean, and cashmeran wood. Formulated with vitamin E to nourish skin while delivering a subtle magnetic scent aura.",
+    features: [
+      "Evening magnetic scent profile",
+      "Formulated with Vitamin E & Jojoba ester hydration",
+      "Gentle on sensitive skin (Alcohol-free botanical base)",
+      "Key notes: Golden Amber, Tonka Bean, Cashmeran, Cocoa",
+    ],
+    priceCents: 24000,
+    compareAtCents: 32000,
+    images: [
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?q=80&w=1000&auto=format&fit=crop",
+    ],
+    colorway: "Smoked Matte Black",
+    rating: 4.93,
+    ratingCount: 47,
+    isNew: true,
+    isFeatured: true,
+    isTrending: true,
+    badge: "HOT DROP",
+    gender: "Unisex",
+    sku: "SPR-AMB-250",
+    sizes: [
+      { label: "250ml", stock: 28 },
+    ],
+  },
+];
