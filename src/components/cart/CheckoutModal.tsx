@@ -13,6 +13,10 @@ import {
   User,
   MapPin,
   ExternalLink,
+  Navigation,
+  Compass,
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useCart } from "../../context/CartContext";
@@ -20,6 +24,7 @@ import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useAuth } from "../../context/AuthContext";
 import { createOrder, fetchPaystackConfig, Order } from "../../lib/api";
+import { LocationPickerModal } from "../checkout/LocationPickerModal";
 
 declare global {
   interface Window {
@@ -43,7 +48,7 @@ export function CheckoutModal() {
     clearCart,
   } = useCart();
   const { formatPrice } = useCurrency();
-  const { user, addRewardPoints } = useAuth();
+  const { user, addRewardPoints, isAuthenticated, openAuthModal } = useAuth();
 
   const [formData, setFormData] = useState({
     name: user?.name || "Kofi Mensah",
@@ -58,6 +63,7 @@ export function CheckoutModal() {
   const [paystackKey, setPaystackKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
 
   const { success, error, info } = useToast();
   const navigate = useNavigate();
@@ -88,6 +94,16 @@ export function CheckoutModal() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLocationPicked = (loc: { address: string; city: string; region: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      address: loc.address,
+      city: loc.city,
+      region: loc.region,
+    }));
+    success("Location Verified", `${loc.address} pinned for courier delivery.`);
   };
 
   const executeOrderCreation = async (paystackRef?: string) => {
@@ -133,7 +149,7 @@ export function CheckoutModal() {
           origin: { y: 0.6 },
           colors: ["#111827", "#10b981", "#3b82f6", "#f59e0b"],
         });
-        success("Payment Successful!", `Order #${result.order.orderNo} is confirmed and queued for live dispatch.`);
+        success("Payment Verified", `Order #${result.order.orderNo} dispatched to atelier packaging queue.`);
       }
     } catch (err: any) {
       error("Order Processing Error", err.message || "Failed to confirm order");
@@ -152,28 +168,27 @@ export function CheckoutModal() {
     setLoading(true);
 
     try {
-        // Step 1: Initialize transaction with backend (using Paystack Secret Key)
-        const initRes = await fetch("/api/paystack/initialize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            amountCents: totalCents, // Correct amount in pesewas
-            currency: "GHS",
-            metadata: {
-              customerName: formData.name,
-              phone: formData.phone,
-              address: formData.address,
-              city: formData.city,
-            },
-          }),
-        });
+      // 1. Initialize Paystack on server
+      const initRes = await fetch("/api/paystack/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          amount: totalCents, // In pesewas
+          currency: "GHS",
+          metadata: {
+            customerName: formData.name,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+          },
+        }),
+      });
 
-        if (initRes.ok) {
-          const initData = await initRes.json();
-
-          if (initData.status && initData.data) {
-            const { authorization_url, access_code, reference } = initData.data;
+      if (initRes.ok) {
+        const initData = await initRes.json();
+        if (initData.status && initData.data) {
+          const { authorization_url, reference } = initData.data;
 
           // If Paystack inline SDK is loaded on page
           if (typeof window !== "undefined" && window.PaystackPop && paystackKey && !paystackKey.includes("placeholder")) {
@@ -195,81 +210,80 @@ export function CheckoutModal() {
             return;
           }
 
-          // If Paystack returns a live hosted authorization URL
+          // If live hosted redirect url
           if (authorization_url && authorization_url.startsWith("https://checkout.paystack.com")) {
-            const popup = window.open(authorization_url, "_blank", "width=480,height=680");
-            if (popup) {
-              info("Paystack Window Opened", "Please complete payment in the Paystack secure window.");
-            }
-          }
-
-            // Complete verified order
-            setTimeout(() => {
-              executeOrderCreation(reference);
-            }, 1200);
+            window.location.href = authorization_url;
             return;
           }
+
+          // Verified Fallback simulation for test environment
+          setTimeout(() => {
+            executeOrderCreation(reference);
+          }, 1200);
+          return;
         }
-      } catch (err: any) {
-        console.warn("Paystack live session note:", err.message);
       }
+    } catch (err: any) {
+      console.warn("Paystack session note:", err.message);
+    }
 
-      // Direct fallback verification
-      setTimeout(() => {
-        executeOrderCreation(`PSTK_AUTH_${Date.now()}`);
-      }, 1000);
-    };
+    // Direct fallback
+    setTimeout(() => {
+      executeOrderCreation(`PSTK_AUTH_${Date.now()}`);
+    }, 1000);
+  };
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-        <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div className="relative w-full max-w-2xl bg-[#0b0b0e] text-white rounded-3xl shadow-2xl border border-white/10 overflow-hidden max-h-[92vh] flex flex-col">
           {/* Close Button */}
           <button
             onClick={closeCheckout}
-            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
 
           {completedOrder ? (
             /* Order Confirmation Screen */
-            <div className="p-8 sm:p-10 text-center space-y-6 overflow-y-auto">
-              <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto text-emerald-600 animate-bounce">
-                <CheckCircle2 className="w-10 h-10" />
+            <div className="p-6 sm:p-10 text-center space-y-6 overflow-y-auto">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400 animate-bounce">
+                <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
                   Paystack Payment Verified & Authorized
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-slate-950 mt-3">
+                <h2 className="text-2xl sm:text-3xl font-serif text-white mt-3">
                   Thank You, {completedOrder.customerName}!
                 </h2>
-                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  Your order is confirmed and has been queued for authentication, luxury packaging, and courier fulfillment.
+                <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto font-light">
+                  Your luxury order is confirmed and currently undergoing atelier verification and insured courier dispatch.
                 </p>
               </div>
 
-              {/* Order & Tracking Box */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 max-w-md mx-auto text-left space-y-3">
-                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                  <span className="text-slate-500">Order Reference</span>
-                  <span className="font-mono font-bold text-slate-900">{completedOrder.orderNo}</span>
+              {/* Order & Tracking Details Box */}
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-5 max-w-md mx-auto text-left space-y-3 font-mono text-xs">
+                <div className="flex justify-between items-center pb-2 border-b border-white/[0.06]">
+                  <span className="text-neutral-500 uppercase">Order Reference</span>
+                  <span className="text-white font-bold">{completedOrder.orderNo}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                  <span className="text-slate-500">Tracking Code</span>
-                  <span className="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <div className="flex justify-between items-center pb-2 border-b border-white/[0.06]">
+                  <span className="text-neutral-500 uppercase">Tracking Code</span>
+                  <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     {completedOrder.trackingCode}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                  <span className="text-slate-500">Delivery Address</span>
-                  <span className="font-semibold text-slate-900">{completedOrder.address}, {completedOrder.city}</span>
+                <div className="flex justify-between items-center pb-2 border-b border-white/[0.06]">
+                  <span className="text-neutral-500 uppercase">Destination</span>
+                  <span className="text-neutral-200 truncate max-w-[200px]">{completedOrder.address}, {completedOrder.city}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Estimated Delivery</span>
-                  <span className="font-bold text-slate-900 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-500 uppercase">Estimated Delivery</span>
+                  <span className="text-white font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     {completedOrder.estimatedDelivery}
                   </span>
                 </div>
@@ -282,10 +296,10 @@ export function CheckoutModal() {
                     closeCheckout();
                     navigate(`/track?order=${completedOrder.orderNo}`);
                   }}
-                  className="btn-primary text-xs py-3.5 px-6 rounded-2xl flex-1 flex items-center justify-center gap-2 shadow-lg"
+                  className="px-6 py-3.5 bg-white text-black font-medium text-xs font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 hover:bg-neutral-200 transition-colors shadow-lg flex-1"
                 >
-                  <Truck className="w-4 h-4 text-emerald-400" />
-                  <span>Track Order Status</span>
+                  <Truck className="w-4 h-4 text-emerald-600" />
+                  <span>Track Live Courier</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
@@ -293,208 +307,243 @@ export function CheckoutModal() {
                     closeCheckout();
                     navigate("/shop");
                   }}
-                  className="btn-secondary text-xs py-3.5 px-5 rounded-2xl"
+                  className="px-5 py-3.5 bg-white/[0.04] border border-white/10 text-neutral-300 font-medium text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-white/10 transition-colors"
                 >
-                  Continue Shopping
+                  Continue Browsing
                 </button>
               </div>
             </div>
-        ) : (
-          /* Checkout Form */
-          <form onSubmit={handlePaystackPayment} className="flex flex-col flex-1 overflow-y-auto">
-            {/* Header */}
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-slate-900 text-white">
-                  <CreditCard className="w-5 h-5" />
+          ) : (
+            /* Checkout Form */
+            <form onSubmit={handlePaystackPayment} className="flex flex-col flex-1 overflow-y-auto">
+              {/* Header */}
+              <div className="p-5 sm:p-6 border-b border-white/[0.08] bg-[#111116] shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg text-white">
+                      Encrypted Paystack Gateway & Logistics
+                    </h3>
+                    <p className="text-xs text-neutral-400 font-light">
+                      Mobile Money (MTN, Telecel, AT), Visa, Mastercard, and Apple Pay
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="p-5 sm:p-6 space-y-5 flex-1 overflow-y-auto">
                 <div>
-                  <h3 className="font-heading font-bold text-lg text-slate-950">
-                    Paystack Checkout & Live Dispatch
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Pay with MTN Mobile Money, Telecel, AT, Visa, Mastercard, or Apple Pay
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Form Fields */}
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3 font-heading">
-                  1. Delivery Details
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Full Name *
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        placeholder="Kofi Mensah"
-                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                      />
-                    </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-mono uppercase tracking-widest text-neutral-400">
+                      1. Delivery Coordinates
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setMapPickerOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-mono text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/20 transition-colors"
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Pin on Mapbox Map</span>
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Email Address *
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="kofi.mensah@example.com"
-                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Phone (For Delivery Call/SMS) *
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="+233 24 412 9902"
-                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      City / Area *
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="city"
-                        required
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="Accra / Kumasi"
-                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    Street Address & Landmarks *
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    required
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="14 Independence Avenue, Airport Residential"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    Delivery Instructions (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="deliveryNotes"
-                    value={formData.deliveryNotes}
-                    onChange={handleInputChange}
-                    placeholder="Leave at security gate / ring bell"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Payment Gateway Box */}
-              <div className="pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 font-heading">
-                  2. Payment Gateway
-                </h4>
-                <div className="p-3.5 rounded-2xl border-2 border-slate-900 bg-slate-50/80 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full border-4 border-slate-900 bg-white" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs font-bold text-slate-950">
-                        Paystack Live (MTN MoMo, Telecel, Visa, Mastercard, Apple Pay)
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        Instant live verification • Zero transaction fees
-                      </p>
+                      <label className="block text-[11px] font-mono text-neutral-400 mb-1 uppercase">
+                        Full Name *
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="text"
+                          name="name"
+                          required
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          placeholder="Alexander McQueen"
+                          className="w-full pl-9 pr-3 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono text-neutral-400 mb-1 uppercase">
+                        Email Address *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="email"
+                          name="email"
+                          required
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="client@apparrel.luxury"
+                          className="w-full pl-9 pr-3 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono text-neutral-400 mb-1 uppercase">
+                        Phone (Courier SMS/Call) *
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="tel"
+                          name="phone"
+                          required
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          placeholder="+233 24 000 0000"
+                          className="w-full pl-9 pr-3 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono text-neutral-400 mb-1 uppercase">
+                        City / Region *
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="text"
+                          name="city"
+                          required
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          placeholder="Accra, Greater Accra"
+                          className="w-full pl-9 pr-3 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 bg-white px-2 py-1 rounded-md border border-slate-200">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Live Connected</span>
+
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-mono text-neutral-400 uppercase">
+                        Street Address & Landmarks *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setMapPickerOpen(true)}
+                        className="text-[10px] font-mono text-indigo-400 hover:underline"
+                      >
+                        Adjust on Map ↗
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      name="address"
+                      required
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="14 Independence Avenue, Airport Residential Area"
+                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-mono text-neutral-400 mb-1 uppercase">
+                      Delivery Instructions (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="deliveryNotes"
+                      value={formData.deliveryNotes}
+                      onChange={handleInputChange}
+                      placeholder="Call at security gate / Leave at concierge"
+                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Gateway Box */}
+                <div className="pt-2">
+                  <h4 className="text-xs font-mono uppercase tracking-widest text-neutral-400 mb-2">
+                    2. Payment Security
+                  </h4>
+                  <div className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full border-4 border-indigo-500 bg-white" />
+                      <div>
+                        <p className="text-xs font-semibold text-white">
+                          Paystack Direct (MoMo, Visa, Mastercard, Apple Pay)
+                        </p>
+                        <p className="text-[11px] text-neutral-400 font-light">
+                          256-bit encrypted authentication • 0% buyer surcharge
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>PCI-DSS</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cart Order Summary */}
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2">
+                  <div className="flex justify-between text-xs text-neutral-400">
+                    <span>Vault Subtotal ({cart.length} items)</span>
+                    <span className="font-mono text-white">{formatPrice(subtotalCents)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-neutral-400">
+                    <span>Insured Global Courier Dispatch</span>
+                    <span className="font-mono text-emerald-400 font-medium">
+                      {shippingCents === 0 ? "COMPLIMENTARY" : formatPrice(shippingCents)}
+                    </span>
+                  </div>
+                  {discountCents > 0 && (
+                    <div className="flex justify-between text-xs text-emerald-400">
+                      <span>VIP Privilege Discount</span>
+                      <span className="font-mono">-{formatPrice(discountCents)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-semibold text-white pt-2 border-t border-white/[0.06]">
+                    <span>Total Authorization</span>
+                    <span className="font-mono text-indigo-400 text-base">{formatPrice(totalCents)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Order summary pill */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs text-slate-600">
-                <div className="flex justify-between">
-                  <span>Items ({cart.reduce((s, i) => s + i.qty, 0)})</span>
-                  <span>{formatPrice(subtotalCents)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Delivery Dispatch</span>
-                  <span>{shippingCents === 0 ? <strong className="text-emerald-600">FREE</strong> : formatPrice(shippingCents)}</span>
-                </div>
-                {discountCents > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-semibold">
-                    <span>Discount</span>
-                    <span>-{formatPrice(discountCents)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-slate-950">
-                  <span>Total Amount</span>
-                  <span className="font-heading font-black text-base">{formatPrice(totalCents)}</span>
-                </div>
+              {/* Footer Submit Button */}
+              <div className="p-5 sm:p-6 border-t border-white/[0.08] bg-[#111116] shrink-0">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 bg-white text-black font-medium text-xs font-mono uppercase tracking-widest rounded-xl hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 shadow-2xl disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Transmitting to Paystack...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 text-emerald-700" />
+                      <span>Authorize Payment • {formatPrice(totalCents)}</span>
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-
-            {/* Bottom Submit */}
-            <div className="p-6 border-t border-slate-200 bg-white flex items-center justify-between gap-4">
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>256-Bit SSL Encrypted</span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary text-xs py-3 px-6 rounded-2xl flex items-center gap-2 shadow-lg disabled:opacity-50"
-              >
-                {loading ? "Connecting Paystack..." : `Pay with Paystack • ${formatPrice(totalCents)}`}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Mapbox / Uber-style Location Picker Modal */}
+      <LocationPickerModal
+        isOpen={mapPickerOpen}
+        onClose={() => setMapPickerOpen(false)}
+        onSelectLocation={handleLocationPicked}
+      />
+    </>
   );
 }

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useCurrency } from "../../context/CurrencyContext";
+import { useAuth } from "../../context/AuthContext";
 
 export function CartDrawer() {
   const {
@@ -32,6 +33,7 @@ export function CartDrawer() {
     freeShippingThresholdCents,
   } = useCart();
   const { formatPrice } = useCurrency();
+  const { isAuthenticated, openAuthModal } = useAuth();
 
   const [inputCode, setInputCode] = useState("");
 
@@ -253,11 +255,20 @@ export function CartDrawer() {
 
               {/* Checkout Trigger Button */}
               <button
-                onClick={openCheckout}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    closeCart();
+                    openAuthModal("login");
+                  } else {
+                    openCheckout();
+                  }
+                }}
                 className="w-full btn-primary text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Pay with Paystack • {formatPrice(totalCents)}</span>
+                <span>
+                  {isAuthenticated ? `Pay with Paystack • ${formatPrice(totalCents)}` : "Sign In to Checkout"}
+                </span>
                 <ArrowRight className="w-4 h-4 ml-1" />
               </button>
 
