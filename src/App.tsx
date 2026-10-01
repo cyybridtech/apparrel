@@ -33,9 +33,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <CurrencyProvider>
-        <AuthProvider>
-          <ToastProvider>
+      <ToastProvider>
+        <CurrencyProvider>
+          <AuthProvider>
             <WishlistProvider>
               <CartProvider>
                 <div className="min-h-screen flex flex-col bg-[#070709] text-neutral-100 font-sans selection:bg-indigo-500 selection:text-white">
@@ -79,9 +79,9 @@ export default function App() {
                 </div>
               </CartProvider>
             </WishlistProvider>
-          </ToastProvider>
-        </AuthProvider>
-      </CurrencyProvider>
+          </AuthProvider>
+        </CurrencyProvider>
+      </ToastProvider>
     </BrowserRouter>
   );
 }
