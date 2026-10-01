@@ -149,10 +149,11 @@ export function CheckoutModal() {
           }),
         });
 
-        const initData = await initRes.json();
+        if (initRes.ok) {
+          const initData = await initRes.json();
 
-        if (initData.status && initData.data) {
-          const { authorization_url, access_code, reference } = initData.data;
+          if (initData.status && initData.data) {
+            const { authorization_url, access_code, reference } = initData.data;
 
           // If Paystack inline SDK is loaded on page
           if (typeof window !== "undefined" && window.PaystackPop && paystackKey && !paystackKey.includes("placeholder")) {
@@ -182,11 +183,12 @@ export function CheckoutModal() {
             }
           }
 
-          // Complete verified order
-          setTimeout(() => {
-            executeOrderCreation(reference);
-          }, 1200);
-          return;
+            // Complete verified order
+            setTimeout(() => {
+              executeOrderCreation(reference);
+            }, 1200);
+            return;
+          }
         }
       } catch (err: any) {
         console.warn("Paystack live session note:", err.message);

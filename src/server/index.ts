@@ -848,9 +848,14 @@ app.get("/api/admin/analytics", requireAdminAuth, (_req: Request, res: Response)
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`> Apparrel E-Commerce API running on http://localhost:${PORT}`);
-  console.log(`> Security: Admin token authorization & Paystack HMAC signature active.`);
-  console.log(`> Categories loaded: ${memoryCategories.length} | Products loaded: ${memoryProducts.length}`);
-});
+// Start Server (when run standalone, not inside Vercel serverless function)
+if (!process.env.VERCEL && process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`> Apparrel E-Commerce API running on http://localhost:${PORT}`);
+    console.log(`> Security: Admin token authorization & Paystack HMAC signature active.`);
+    console.log(`> Categories loaded: ${memoryCategories.length} | Products loaded: ${memoryProducts.length}`);
+  });
+}
+
+export { app };
+export default app;
