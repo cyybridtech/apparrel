@@ -17,8 +17,9 @@ import {
 import confetti from "canvas-confetti";
 import { useCart } from "../../context/CartContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { useAuth } from "../../context/AuthContext";
 import { createOrder, fetchPaystackConfig, Order } from "../../lib/api";
-import { formatPrice } from "../../lib/utils";
 
 declare global {
   interface Window {
@@ -41,14 +42,16 @@ export function CheckoutModal() {
     totalCents,
     clearCart,
   } = useCart();
+  const { formatPrice } = useCurrency();
+  const { user, addRewardPoints } = useAuth();
 
   const [formData, setFormData] = useState({
-    name: "Kofi Mensah",
-    email: "kofi.mensah@example.com",
-    phone: "+233 24 412 9902",
-    address: "14 Independence Avenue, Airport Residential",
-    city: "Accra",
-    region: "Greater Accra",
+    name: user?.name || "Kofi Mensah",
+    email: user?.email || "kofi.mensah@example.com",
+    phone: user?.phone || "+233 24 412 9902",
+    address: user?.addresses?.[0]?.street || "14 Independence Avenue, Airport Residential",
+    city: user?.addresses?.[0]?.city || "Accra",
+    region: user?.addresses?.[0]?.region || "Greater Accra",
     deliveryNotes: "Call when at security gate",
   });
 
@@ -58,6 +61,20 @@ export function CheckoutModal() {
 
   const { success, error, info } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+        address: user.addresses?.[0]?.street || prev.address,
+        city: user.addresses?.[0]?.city || prev.city,
+        region: user.addresses?.[0]?.region || prev.region,
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchPaystackConfig()
@@ -107,6 +124,9 @@ export function CheckoutModal() {
       if (result.success && result.order) {
         setCompletedOrder(result.order);
         clearCart();
+        if (user) {
+          addRewardPoints(Math.round(totalCents / 100));
+        }
         confetti({
           particleCount: 140,
           spread: 80,

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Star, Eye, ShoppingBag, Sparkles } from "lucide-react";
 import { Product } from "../../lib/api";
-import { formatPrice } from "../../lib/utils";
+import { useCurrency } from "../../context/CurrencyContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
 
@@ -15,6 +15,7 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { formatPrice } = useCurrency();
 
   const isFavorited = isInWishlist(product.id);
   const primaryImg = product.images[0] || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000";

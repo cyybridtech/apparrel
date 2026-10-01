@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { X, Star, ShoppingBag, Heart, ShieldCheck, Check, ArrowRight } from "lucide-react";
 import { Product } from "../../lib/api";
-import { formatPrice } from "../../lib/utils";
+import { useCurrency } from "../../context/CurrencyContext";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 
@@ -18,6 +18,7 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
 
   if (!product) return null;
 

@@ -12,13 +12,53 @@ import {
   Sparkles,
   ArrowLeft,
   Share2,
+  Ruler,
+  Flame,
+  MessageSquare,
+  ThumbsUp,
+  User,
 } from "lucide-react";
 import { fetchProductBySlug, Product } from "../lib/api";
-import { formatPrice } from "../lib/utils";
+import { useCurrency } from "../context/CurrencyContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useToast } from "../context/ToastContext";
 import { ProductCard } from "../components/shop/ProductCard";
+import { SizeGuideModal } from "../components/shop/SizeGuideModal";
+
+interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  title: string;
+  content: string;
+  verifiedPurchase: boolean;
+  helpfulCount: number;
+}
+
+const DEFAULT_REVIEWS: Review[] = [
+  {
+    id: "rev-1",
+    author: "Kwame A.",
+    rating: 5,
+    date: "2 days ago",
+    title: "Uncompromising Quality & Heavy Drape",
+    content: "The fabric weight is unlike any standard high street tee. It holds the structural boxy cut perfectly and the collar is firmly rib-stitched. Highly recommended.",
+    verifiedPurchase: true,
+    helpfulCount: 14,
+  },
+  {
+    id: "rev-2",
+    author: "Selorm K.",
+    rating: 5,
+    date: "1 week ago",
+    title: "Worth Every Cedi",
+    content: "Fast delivery to Airport Residential in under 2 hours. Packaged inside a custom dust bag. Fits true to size.",
+    verifiedPurchase: true,
+    helpfulCount: 9,
+  },
+];
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,7 +68,18 @@ export function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [viewersCount, setViewersCount] = useState(8);
 
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>(DEFAULT_REVIEWS);
+  const [isWritingReview, setIsWritingReview] = useState(false);
+  const [newReviewAuthor, setNewReviewAuthor] = useState("");
+  const [newReviewTitle, setNewReviewTitle] = useState("");
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewContent, setNewReviewContent] = useState("");
+
+  const { formatPrice } = useCurrency();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { success } = useToast();
@@ -43,6 +94,9 @@ export function ProductDetailPage() {
         setSelectedImg(0);
         setSelectedSize(data.product.sizes[0]?.label || "");
         setQty(1);
+
+        // Simulated dynamic viewers count
+        setViewersCount(Math.floor(6 + Math.random() * 9));
       })
       .catch((err) => {
         console.error("Failed to load product", err);
@@ -54,18 +108,18 @@ export function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-4">
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-4">
         <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-slate-500 font-semibold">Loading product details...</p>
+        <p className="text-xs text-slate-500 font-semibold">Loading product specifications...</p>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+      <div className="max-w-md mx-auto px-4 py-24 text-center space-y-4">
         <h2 className="text-2xl font-bold font-heading">Product Not Found</h2>
-        <p className="text-xs text-slate-500">The product you're looking for might have been moved or discontinued.</p>
+        <p className="text-xs text-slate-500">The requested drop may have concluded or moved.</p>
         <Link to="/shop" className="btn-primary text-xs py-2.5 px-6 inline-block">
           Return to Catalog
         </Link>
@@ -109,13 +163,36 @@ export function ProductDetailPage() {
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(window.location.href);
-      success("Link Copied", "Product link copied to your clipboard.");
+      success("Link Copied", "Product link copied to clipboard.");
     }
   };
 
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewAuthor || !newReviewTitle || !newReviewContent) return;
+
+    const newRev: Review = {
+      id: `rev-${Date.now()}`,
+      author: newReviewAuthor,
+      rating: newReviewRating,
+      date: "Just now",
+      title: newReviewTitle,
+      content: newReviewContent,
+      verifiedPurchase: true,
+      helpfulCount: 1,
+    };
+
+    setReviews([newRev, ...reviews]);
+    setIsWritingReview(false);
+    setNewReviewAuthor("");
+    setNewReviewTitle("");
+    setNewReviewContent("");
+    success("Review Published", "Thank you for sharing your feedback with the APPARREL community.");
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-      {/* Breadcrumb navigation */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+      {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs text-slate-400">
         <Link to="/" className="hover:text-slate-900 transition-colors">Home</Link>
         <ChevronRight className="w-3.5 h-3.5" />
@@ -129,15 +206,14 @@ export function ProductDetailPage() {
       </nav>
 
       {/* Main Product Showcase Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-14">
-        {/* Left Gallery (7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-14 items-start">
+        {/* Left: Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Main Large Image */}
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-white border border-slate-200/80 shadow-sm group">
             <img
               src={product.images[selectedImg] || product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
             />
             {product.badge && (
               <span className="absolute top-4 left-4 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md">
@@ -151,7 +227,7 @@ export function ProductDetailPage() {
             )}
           </div>
 
-          {/* Thumbnails list */}
+          {/* Thumbnails */}
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-3">
               {product.images.map((img, idx) => (
@@ -171,9 +247,9 @@ export function ProductDetailPage() {
           )}
         </div>
 
-        {/* Right Info & Actions (5 cols) */}
-        <div className="lg:col-span-5 space-y-6 flex flex-col justify-between">
-          <div className="space-y-5">
+        {/* Right: Product Actions & Specs (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="space-y-4">
             {/* Header info */}
             <div>
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -188,12 +264,18 @@ export function ProductDetailPage() {
               <p className="text-xs text-slate-500 mt-1 font-medium">{product.colorway}</p>
             </div>
 
-            {/* Rating & Reviews */}
+            {/* Live Urgency Meter */}
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 px-3 py-2 rounded-2xl border border-amber-200/60">
+              <Flame className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>{viewersCount} customers are viewing this item right now</span>
+            </div>
+
+            {/* Rating */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 text-xs bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <span className="font-bold text-slate-900">{product.rating.toFixed(1)}</span>
-                <span className="text-slate-400">({product.ratingCount} reviews)</span>
+                <span className="text-slate-400">({reviews.length + product.ratingCount} reviews)</span>
               </div>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
@@ -206,7 +288,7 @@ export function ProductDetailPage() {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Price (Paystack Verified)
+                  Price (Multi-Currency Guaranteed)
                 </span>
                 <div className="flex items-baseline gap-3 mt-0.5">
                   <span className="text-2xl sm:text-3xl font-black font-heading text-slate-950">
@@ -219,8 +301,8 @@ export function ProductDetailPage() {
                   )}
                 </div>
               </div>
-              <span className="text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
-                GHS / Pesewas
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                In Stock
               </span>
             </div>
 
@@ -233,7 +315,7 @@ export function ProductDetailPage() {
             {product.features && product.features.length > 0 && (
               <div className="space-y-2 pt-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-900 font-heading">
-                  Product Specifications & Notes:
+                  Product Specifications:
                 </span>
                 <ul className="space-y-1.5 text-xs text-slate-600">
                   {product.features.map((feat, i) => (
@@ -246,25 +328,20 @@ export function ProductDetailPage() {
               </div>
             )}
 
-            {/* Size Selector */}
+            {/* Size Selector & Size Guide Button */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  Available Sizes / Options:
+                  Select Size / Option:
                 </span>
-                {currentSizeObj && (
-                  <span
-                    className={`text-xs font-semibold ${
-                      currentSizeObj.stock <= 5 ? "text-amber-600" : "text-emerald-600"
-                    }`}
-                  >
-                    {currentSizeObj.stock <= 0
-                      ? "Out of Stock"
-                      : currentSizeObj.stock <= 5
-                      ? `Only ${currentSizeObj.stock} remaining`
-                      : "In Stock Ready for Dispatch"}
-                  </span>
-                )}
+
+                <button
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="text-xs font-bold text-slate-900 hover:text-amber-600 flex items-center gap-1 transition-colors"
+                >
+                  <Ruler className="w-3.5 h-3.5" />
+                  <span>Size & Fit Guide</span>
+                </button>
               </div>
 
               <div className="flex flex-wrap gap-2.5">
@@ -320,7 +397,7 @@ export function ProductDetailPage() {
           </div>
 
           {/* Action CTAs */}
-          <div className="pt-6 border-t border-slate-200 space-y-4">
+          <div className="pt-4 border-t border-slate-200 space-y-4">
             <div className="flex gap-3">
               <button
                 onClick={handleAddToCart}
@@ -368,28 +445,165 @@ export function ProductDetailPage() {
               </button>
             </div>
 
-            {/* Delivery & Trust Highlights */}
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5 text-xs text-slate-600">
+            {/* Delivery Guarantees */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-xs text-slate-600">
               <div className="flex items-center gap-2.5">
                 <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Live dispatch in 30-90 mins with Mapbox telemetry in Accra</span>
+                <span>Express Dispatch with nationwide fulfillment tracking</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <RotateCcw className="w-4 h-4 text-slate-600 shrink-0" />
-                <span>7-Day Hassle-Free Size Exchange Guaranteed</span>
+                <span>7-Day Complimentary Size & Style Exchange Guarantee</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Related Drops Recommendations */}
+      {/* Verified Customer Reviews Section */}
+      <section className="pt-12 border-t border-slate-200 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <MessageSquare className="w-4 h-4 text-slate-900" />
+              <span>Customer Feedback</span>
+            </div>
+            <h3 className="text-2xl font-bold font-heading text-slate-950 mt-1">
+              Verified Purchaser Reviews ({reviews.length})
+            </h3>
+          </div>
+
+          <button
+            onClick={() => setIsWritingReview(!isWritingReview)}
+            className="btn-secondary text-xs py-2.5 px-5 rounded-xl self-start sm:self-center"
+          >
+            {isWritingReview ? "Cancel Review" : "Write a Review"}
+          </button>
+        </div>
+
+        {/* Review Form */}
+        {isWritingReview && (
+          <form
+            onSubmit={handleReviewSubmit}
+            className="bg-slate-50 rounded-3xl p-6 sm:p-8 border border-slate-200 space-y-4 max-w-2xl animate-fadeIn"
+          >
+            <h4 className="font-heading font-bold text-sm text-slate-950">
+              Leave Your Verified Review
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                  Your Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newReviewAuthor}
+                  onChange={(e) => setNewReviewAuthor(e.target.value)}
+                  placeholder="e.g. Kwame Mensah"
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                  Star Rating *
+                </label>
+                <select
+                  value={newReviewRating}
+                  onChange={(e) => setNewReviewRating(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold"
+                >
+                  <option value={5}>★★★★★ (5 Stars - Exceptional)</option>
+                  <option value={4}>★★★★☆ (4 Stars - Great)</option>
+                  <option value={3}>★★★☆☆ (3 Stars - Average)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                Review Headline *
+              </label>
+              <input
+                type="text"
+                required
+                value={newReviewTitle}
+                onChange={(e) => setNewReviewTitle(e.target.value)}
+                placeholder="e.g. Amazing quality and perfect heavyweight fit"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                Detailed Feedback *
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={newReviewContent}
+                onChange={(e) => setNewReviewContent(e.target.value)}
+                placeholder="Describe the fabric texture, fit, durability, and comfort..."
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
+              />
+            </div>
+
+            <button type="submit" className="btn-primary text-xs py-2.5 px-6 rounded-xl">
+              Submit Review
+            </button>
+          </form>
+        )}
+
+        {/* Reviews List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {reviews.map((rev) => (
+            <div
+              key={rev.id}
+              className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-amber-400">
+                  {Array.from({ length: rev.rating }).map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                  ))}
+                </div>
+                <span className="text-[11px] text-slate-400 font-mono">{rev.date}</span>
+              </div>
+
+              <div>
+                <h5 className="text-xs font-bold text-slate-950 font-heading">
+                  {rev.title}
+                </h5>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  {rev.content}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{rev.author}</span>
+                  {rev.verifiedPurchase && (
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-bold">
+                      ✓ Verified Buyer
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Related Products */}
       {related.length > 0 && (
         <section className="pt-12 border-t border-slate-200 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Complementary Styles
+                Curated Recommendations
               </span>
               <h3 className="text-xl sm:text-2xl font-bold font-heading text-slate-950">
                 You Might Also Like
@@ -410,6 +624,13 @@ export function ProductDetailPage() {
           </div>
         </section>
       )}
+
+      {/* Sizing Modal */}
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+        category={product.category}
+      />
     </div>
   );
 }

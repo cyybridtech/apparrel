@@ -12,7 +12,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { formatPrice } from "../../lib/utils";
+import { useCurrency } from "../../context/CurrencyContext";
 
 export function CartDrawer() {
   const {
@@ -31,6 +31,7 @@ export function CartDrawer() {
     openCheckout,
     freeShippingThresholdCents,
   } = useCart();
+  const { formatPrice } = useCurrency();
 
   const [inputCode, setInputCode] = useState("");
 

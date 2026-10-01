@@ -1,7 +1,7 @@
 import React from "react";
 import { Sparkles, Shirt, Footprints, Flame, Watch, Droplets, Filter, RotateCcw } from "lucide-react";
 import { Category } from "../../lib/api";
-import { formatPrice } from "../../lib/utils";
+import { useCurrency } from "../../context/CurrencyContext";
 
 interface FilterSidebarProps {
   categories: Category[];
@@ -28,6 +28,7 @@ export function FilterSidebar({
   onPriceChange,
   onReset,
 }: FilterSidebarProps) {
+  const { formatPrice } = useCurrency();
   const getCategoryIcon = (slug: string) => {
     switch (slug) {
       case "tops":

@@ -3,13 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { fetchProductBySlug, Product } from "../lib/api";
-import { formatPrice } from "../lib/utils";
 import { QuickViewModal } from "../components/shop/QuickViewModal";
 
 export function WishlistPage() {
   const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { formatPrice } = useCurrency();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const navigate = useNavigate();
