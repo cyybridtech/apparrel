@@ -18,26 +18,28 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pin) return;
+  const handleSubmit = async (e?: React.FormEvent, bypassPin?: string) => {
+    if (e) e.preventDefault();
+    const pinToUse = (bypassPin || pin).trim();
+    if (!pinToUse) return;
+
     setLoading(true);
     setErrorMsg("");
 
     try {
-      const ok = await verifyAdminPasskey(pin);
-      if (ok) {
+      const res = await verifyAdminPasskey(pinToUse);
+      if (res.authorized && res.token) {
         localStorage.setItem("apparrel_admin_auth", "true");
-        localStorage.setItem("apparrel_admin_token", "adm_" + Date.now());
-        success("Access Granted", "Welcome to the Secret Inventory & Restock Portal.");
+        localStorage.setItem("apparrel_admin_token", res.token);
+        success("Access Granted", "Welcome to the Inventory & Operations Portal.");
         onClose();
-        navigate("/secret-admin");
+        navigate("/admin");
       } else {
-        setErrorMsg("Invalid secret PIN. Please check .env ADMIN_SECRET_KEY");
+        setErrorMsg("Invalid secret PIN. Please check your administrator passkey.");
         error("Access Denied", "Incorrect Admin Passkey");
       }
     } catch {
-      setErrorMsg("Verification request failed");
+      setErrorMsg("Verification request failed. Server unreachable.");
     } finally {
       setLoading(false);
     }
@@ -59,12 +61,12 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
           </div>
           <h3 className="text-xl font-bold font-heading">Restock & Admin Portal</h3>
           <p className="text-xs text-slate-400 mt-1">
-            Restricted area for store managers to restock inventory & dispatch orders
+            Restricted area for store managers to restock inventory & fulfill orders
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={(e) => handleSubmit(e)} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
               Enter Secret Passkey / PIN
@@ -75,7 +77,7 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Default: apparrel2026 or 1234"
+                placeholder="Enter Administrator Passkey"
                 autoFocus
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all font-mono"
               />
@@ -87,42 +89,26 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
               </div>
             )}
             <p className="text-[11px] text-slate-400 mt-2">
-              Tip: You can change the master PIN in your <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">.env</code> file under <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">ADMIN_SECRET_KEY</code>.
+              Configured via <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">ADMIN_SECRET_KEY</code> in your environment.
             </p>
           </div>
 
-          <div className="pt-2 flex items-center justify-between gap-3">
+          <div className="pt-2 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => {
-                localStorage.setItem("apparrel_admin_auth", "true");
-                localStorage.setItem("apparrel_admin_token", "adm_" + Date.now());
-                success("Access Granted", "Admin session unlocked.");
-                onClose();
-                navigate("/admin");
-              }}
-              className="px-3 py-2 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+              onClick={onClose}
+              className="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
             >
-              ⚡ Quick Unlock (Demo)
+              Cancel
             </button>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !pin}
-                className="btn-primary text-xs py-2 px-4 rounded-xl disabled:opacity-50"
-              >
-                {loading ? "Authenticating..." : "Enter Portal"}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading || !pin}
+              className="btn-primary text-xs py-2.5 px-5 rounded-xl disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {loading ? "Authenticating..." : "Enter Portal"}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </form>
       </div>

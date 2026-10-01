@@ -132,152 +132,151 @@ export function CheckoutModal() {
     setLoading(true);
 
     try {
-      // Step 1: Initialize transaction with backend (using Paystack Secret Key)
-      const initRes = await fetch("/api/paystack/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          amountCents: totalCents * 100, // in pesewas
-          currency: "GHS",
-          metadata: {
-            customerName: formData.name,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-          },
-        }),
-      });
-
-      const initData = await initRes.json();
-
-      if (initData.status && initData.data) {
-        const { authorization_url, access_code, reference } = initData.data;
-
-        // If Paystack inline SDK is loaded on page
-        if (typeof window !== "undefined" && window.PaystackPop && paystackKey && !paystackKey.includes("placeholder")) {
-          const handler = window.PaystackPop.setup({
-            key: paystackKey,
+        // Step 1: Initialize transaction with backend (using Paystack Secret Key)
+        const initRes = await fetch("/api/paystack/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             email: formData.email,
-            amount: totalCents * 100,
+            amountCents: totalCents, // Correct amount in pesewas
             currency: "GHS",
-            ref: reference,
-            callback: (response: any) => {
-              executeOrderCreation(response.reference || reference);
+            metadata: {
+              customerName: formData.name,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
             },
-            onClose: () => {
-              setLoading(false);
-              info("Payment Cancelled", "You can resume checkout anytime.");
-            },
-          });
-          handler.openIframe();
+          }),
+        });
+
+        const initData = await initRes.json();
+
+        if (initData.status && initData.data) {
+          const { authorization_url, access_code, reference } = initData.data;
+
+          // If Paystack inline SDK is loaded on page
+          if (typeof window !== "undefined" && window.PaystackPop && paystackKey && !paystackKey.includes("placeholder")) {
+            const handler = window.PaystackPop.setup({
+              key: paystackKey,
+              email: formData.email,
+              amount: totalCents,
+              currency: "GHS",
+              ref: reference,
+              callback: (response: any) => {
+                executeOrderCreation(response.reference || reference);
+              },
+              onClose: () => {
+                setLoading(false);
+                info("Payment Cancelled", "You can resume checkout anytime.");
+              },
+            });
+            handler.openIframe();
+            return;
+          }
+
+          // If Paystack returns a live hosted authorization URL
+          if (authorization_url && authorization_url.startsWith("https://checkout.paystack.com")) {
+            const popup = window.open(authorization_url, "_blank", "width=480,height=680");
+            if (popup) {
+              info("Paystack Window Opened", "Please complete payment in the Paystack secure window.");
+            }
+          }
+
+          // Complete verified order
+          setTimeout(() => {
+            executeOrderCreation(reference);
+          }, 1200);
           return;
         }
-
-        // If Paystack returns a live hosted authorization URL
-        if (authorization_url && authorization_url.startsWith("https://checkout.paystack.com")) {
-          // Open popup window or proceed with verified test confirmation
-          const popup = window.open(authorization_url, "_blank", "width=480,height=680");
-          if (popup) {
-            info("Paystack Window Opened", "Please complete payment in the Paystack secure window.");
-          }
-        }
-
-        // Complete verified order
-        setTimeout(() => {
-          executeOrderCreation(reference);
-        }, 1200);
-        return;
+      } catch (err: any) {
+        console.warn("Paystack live session note:", err.message);
       }
-    } catch (err: any) {
-      console.warn("Paystack live session note:", err.message);
-    }
 
-    // Direct fallback verification
-    setTimeout(() => {
-      executeOrderCreation(`PSTK_AUTH_${Date.now()}`);
-    }, 1000);
-  };
+      // Direct fallback verification
+      setTimeout(() => {
+        executeOrderCreation(`PSTK_AUTH_${Date.now()}`);
+      }, 1000);
+    };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
-        {/* Close Button */}
-        <button
-          onClick={closeCheckout}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+        <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+          {/* Close Button */}
+          <button
+            onClick={closeCheckout}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
-        {completedOrder ? (
-          /* Order Confirmation Screen */
-          <div className="p-8 sm:p-10 text-center space-y-6 overflow-y-auto">
-            <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto text-emerald-600 animate-bounce">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                Paystack Payment Verified & Authorized
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold font-heading text-slate-950 mt-3">
-                Thank You, {completedOrder.customerName}!
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                Your order is confirmed and has been assigned to our live courier dispatch fleet on Mapbox.
-              </p>
-            </div>
-
-            {/* Order & Tracking Box */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 max-w-md mx-auto text-left space-y-3">
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                <span className="text-slate-500">Order Reference</span>
-                <span className="font-mono font-bold text-slate-900">{completedOrder.orderNo}</span>
+          {completedOrder ? (
+            /* Order Confirmation Screen */
+            <div className="p-8 sm:p-10 text-center space-y-6 overflow-y-auto">
+              <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto text-emerald-600 animate-bounce">
+                <CheckCircle2 className="w-10 h-10" />
               </div>
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                <span className="text-slate-500">Live Tracking ID</span>
-                <span className="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {completedOrder.trackingCode}
+
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                  Paystack Payment Verified & Authorized
                 </span>
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-slate-950 mt-3">
+                  Thank You, {completedOrder.customerName}!
+                </h2>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  Your order is confirmed and has been queued for authentication, luxury packaging, and courier fulfillment.
+                </p>
               </div>
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
-                <span className="text-slate-500">Delivery Address</span>
-                <span className="font-semibold text-slate-900">{completedOrder.address}, {completedOrder.city}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500">Live Estimated Delivery</span>
-                <span className="font-bold text-slate-900 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {completedOrder.estimatedDelivery}
-                </span>
-              </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-              <button
-                onClick={() => {
-                  closeCheckout();
-                  navigate(`/track?order=${completedOrder.orderNo}`);
-                }}
-                className="btn-primary text-xs py-3.5 px-6 rounded-2xl flex-1 flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Truck className="w-4 h-4 text-emerald-400" />
-                <span>Track Live on Mapbox</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => {
-                  closeCheckout();
-                  navigate("/shop");
-                }}
-                className="btn-secondary text-xs py-3.5 px-5 rounded-2xl"
-              >
-                Continue Shopping
-              </button>
+              {/* Order & Tracking Box */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 max-w-md mx-auto text-left space-y-3">
+                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
+                  <span className="text-slate-500">Order Reference</span>
+                  <span className="font-mono font-bold text-slate-900">{completedOrder.orderNo}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
+                  <span className="text-slate-500">Tracking Code</span>
+                  <span className="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {completedOrder.trackingCode}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200">
+                  <span className="text-slate-500">Delivery Address</span>
+                  <span className="font-semibold text-slate-900">{completedOrder.address}, {completedOrder.city}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500">Estimated Delivery</span>
+                  <span className="font-bold text-slate-900 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {completedOrder.estimatedDelivery}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+                <button
+                  onClick={() => {
+                    closeCheckout();
+                    navigate(`/track?order=${completedOrder.orderNo}`);
+                  }}
+                  className="btn-primary text-xs py-3.5 px-6 rounded-2xl flex-1 flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Truck className="w-4 h-4 text-emerald-400" />
+                  <span>Track Order Status</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    closeCheckout();
+                    navigate("/shop");
+                  }}
+                  className="btn-secondary text-xs py-3.5 px-5 rounded-2xl"
+                >
+                  Continue Shopping
+                </button>
+              </div>
             </div>
-          </div>
         ) : (
           /* Checkout Form */
           <form onSubmit={handlePaystackPayment} className="flex flex-col flex-1 overflow-y-auto">

@@ -55,12 +55,6 @@ export interface Order {
   paymentMethod: string;
   paystackRef?: string;
   trackingCode: string;
-  courierName: string;
-  courierPhone: string;
-  courierLat: number;
-  courierLng: number;
-  destinationLat: number;
-  destinationLng: number;
   estimatedDelivery: string;
   deliveryNotes?: string;
   items: {
@@ -75,20 +69,6 @@ export interface Order {
   }[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TrackingLiveState {
-  orderNo: string;
-  status: string;
-  courierName: string;
-  courierPhone: string;
-  courierLat: number;
-  courierLng: number;
-  destinationLat: number;
-  destinationLng: number;
-  estimatedDelivery: string;
-  progressPercent: number;
-  timestamp: string;
 }
 
 export interface AdminAnalytics {
@@ -116,6 +96,15 @@ export interface InventoryLog {
 }
 
 const API_BASE = "";
+
+// Helper to get auth header
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("apparrel_admin_token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 // Fallback products transformed from seed
 const FALLBACK_PRODUCTS: Product[] = INITIAL_PRODUCTS.map((p, idx) => ({
@@ -189,207 +178,125 @@ export async function fetchPaystackConfig(): Promise<{ publicKey: string; curren
 }
 
 export async function createOrder(orderData: any): Promise<{ success: boolean; order: Order }> {
-  try {
-    const res = await fetch(`${API_BASE}/api/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderData),
-    });
-    if (res.ok) return await res.json();
-  } catch {}
+  const res = await fetch(`${API_BASE}/api/orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderData),
+  });
 
-  // Fallback direct order creator
-  const newOrder: Order = {
-    id: Math.floor(100 + Math.random() * 900),
-    orderNo: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
-    customerName: orderData.customerName,
-    email: orderData.email,
-    phone: orderData.phone,
-    address: orderData.address,
-    city: orderData.city,
-    region: orderData.region || "Accra",
-    subtotalCents: orderData.subtotalCents,
-    shippingCents: orderData.shippingCents || 0,
-    discountCents: orderData.discountCents || 0,
-    totalCents: orderData.totalCents,
-    currency: orderData.currency || "GHS",
-    status: "confirmed",
-    paymentStatus: "paid",
-    paymentMethod: "paystack",
-    paystackRef: orderData.paystackRef || `PSTK_LOCAL_${Date.now()}`,
-    trackingCode: `TRK-${Math.floor(100000 + Math.random() * 900000)}-GH`,
-    courierName: "Kwame Boateng (Kicks Express Fleet #04)",
-    courierPhone: "+233 24 555 8901",
-    courierLat: 5.6080,
-    courierLng: -0.1820,
-    destinationLat: 5.6148,
-    destinationLng: -0.1731,
-    estimatedDelivery: "30 - 45 mins",
-    deliveryNotes: orderData.deliveryNotes,
-    items: orderData.items,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  return { success: true, order: newOrder };
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to place order.");
+  }
+  return data;
 }
 
 export async function fetchOrderByNumber(orderNo: string): Promise<Order> {
-  try {
-    const res = await fetch(`${API_BASE}/api/orders/${orderNo}`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.order;
-    }
-  } catch {}
-
-  // Fallback demo order
-  return {
-    id: 1,
-    orderNo: orderNo.toUpperCase(),
-    customerName: "Kofi Mensah",
-    email: "kofi.mensah@example.com",
-    phone: "+233 24 412 9902",
-    address: "14 Independence Avenue, Airport Residential",
-    city: "Accra",
-    region: "Greater Accra",
-    subtotalCents: 145000,
-    shippingCents: 0,
-    discountCents: 0,
-    totalCents: 145000,
-    currency: "GHS",
-    status: "in_transit",
-    paymentStatus: "paid",
-    paymentMethod: "paystack",
-    paystackRef: "T99281726481_PSTK",
-    trackingCode: "TRK-92841-GH",
-    courierName: "Kwame Boateng (Kicks Express Fleet #04)",
-    courierPhone: "+233 24 555 8901",
-    courierLat: 5.6080,
-    courierLng: -0.1820,
-    destinationLat: 5.6148,
-    destinationLng: -0.1731,
-    estimatedDelivery: "25 - 35 mins",
-    items: [
-      {
-        productId: 7,
-        name: "Court Heritage 85 High-Top Sneaker",
-        brand: "KICKS GH",
-        category: "sneakers",
-        sizeLabel: "EU 42",
-        image: "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1000",
-        qty: 1,
-        unitPriceCents: 145000,
-      },
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  const res = await fetch(`${API_BASE}/api/orders/${orderNo}`);
+  if (res.ok) {
+    const data = await res.json();
+    return data.order;
+  }
+  throw new Error("Order not found with provided reference code");
 }
 
-// ─── Admin API Calls ───
-const VALID_PASSKEYS = ["apparrel2026", "1234", "admin123", "admin", "password", "apparrel", "secret", "master", "0000", "2026"];
+// ─── Admin API Calls (Secure Session Token) ─────────────────────
 
-export async function verifyAdminPasskey(pin: string): Promise<boolean> {
-  const cleanPin = (pin || "").trim().toLowerCase();
+export async function verifyAdminPasskey(pin: string): Promise<{ authorized: boolean; token?: string }> {
+  const cleanPin = (pin || "").trim();
 
-  // Try API first
   try {
     const res = await fetch(`${API_BASE}/api/admin/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pin: cleanPin }),
     });
-    if (res.ok) return true;
-  } catch {}
+    if (res.ok) {
+      const data = await res.json();
+      return { authorized: Boolean(data.authorized), token: data.token };
+    }
+  } catch (err) {
+    console.error("Verification endpoint unreachable", err);
+  }
 
-  // Fallback client-side verification
-  return VALID_PASSKEYS.includes(cleanPin);
+  return { authorized: false };
 }
 
 export async function restockProduct(productId: number, sizeLabel: string, restockAmount: number): Promise<any> {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/restock`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, sizeLabel, restockAmount }),
-    });
-    if (res.ok) return await res.json();
-  } catch {}
+  const res = await fetch(`${API_BASE}/api/admin/restock`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ productId, sizeLabel, restockAmount }),
+  });
 
-  return {
-    success: true,
-    message: `Restocked size ${sizeLabel} by +${restockAmount} units.`,
-  };
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Restock operation failed");
+  return data;
 }
 
 export async function fetchAdminAnalytics(): Promise<AdminAnalytics> {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/analytics`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.stats;
-    }
-  } catch {}
-
-  return {
-    totalRevenueCents: 489000,
-    totalOrders: 14,
-    totalProducts: FALLBACK_PRODUCTS.length,
-    totalUnitsSold: 28,
-    lowStockCount: 2,
-    outOfStockCount: 0,
-    recentOrders: [],
-    lowStockProducts: [],
-  };
+  const res = await fetch(`${API_BASE}/api/admin/analytics`, {
+    headers: getAuthHeaders(),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data.stats;
+  }
+  throw new Error("Failed to load admin analytics");
 }
 
-export async function updateOrderStatus(orderId: number, status: string, courierDetails?: any): Promise<any> {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, ...courierDetails }),
-    });
-    if (res.ok) return await res.json();
-  } catch {}
+export async function fetchAdminOrders(): Promise<Order[]> {
+  const res = await fetch(`${API_BASE}/api/admin/orders`, {
+    headers: getAuthHeaders(),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data.orders || [];
+  }
+  throw new Error("Failed to load admin orders");
+}
 
-  return { success: true };
+export async function updateOrderStatus(orderId: number, status: string, deliveryDetails?: any): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}/status`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status, ...deliveryDetails }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update order status");
+  return data;
 }
 
 export async function saveProduct(productData: any, isEdit = false, id?: number): Promise<any> {
-  try {
-    const url = isEdit ? `${API_BASE}/api/admin/products/${id}` : `${API_BASE}/api/admin/products`;
-    const method = isEdit ? "PUT" : "POST";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(productData),
-    });
-    if (res.ok) return await res.json();
-  } catch {}
-
-  return { success: true };
+  const url = isEdit ? `${API_BASE}/api/admin/products/${id}` : `${API_BASE}/api/admin/products`;
+  const method = isEdit ? "PUT" : "POST";
+  const res = await fetch(url, {
+    method,
+    headers: getAuthHeaders(),
+    body: JSON.stringify(productData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to save product");
+  return data;
 }
 
 export async function fetchInventoryLogs(): Promise<InventoryLog[]> {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/inventory-logs`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.logs || [];
-    }
-  } catch {}
-  return [];
+  const res = await fetch(`${API_BASE}/api/admin/inventory-logs`, {
+    headers: getAuthHeaders(),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data.logs || [];
+  }
+  throw new Error("Failed to fetch inventory audit logs");
 }
 
 export async function deleteProduct(id: number): Promise<any> {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/products/${id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) return await res.json();
-  } catch {}
-
-  return { success: true };
+  const res = await fetch(`${API_BASE}/api/admin/products/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete product");
+  return data;
 }

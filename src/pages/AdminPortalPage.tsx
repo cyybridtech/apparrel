@@ -37,6 +37,7 @@ import {
   fetchProducts,
   restockProduct,
   fetchAdminAnalytics,
+  fetchAdminOrders,
   updateOrderStatus,
   saveProduct,
   deleteProduct,
@@ -123,7 +124,7 @@ export function AdminPortalPage() {
       const [prods, statsRes, ordsRes, logsRes] = await Promise.all([
         fetchProducts(),
         fetchAdminAnalytics().catch(() => null),
-        fetch("/api/admin/orders").then((r) => r.json()).then((d) => d.orders || []).catch(() => []),
+        fetchAdminOrders().catch(() => []),
         fetchInventoryLogs().catch(() => []),
       ]);
       setProducts(prods);
@@ -146,33 +147,25 @@ export function AdminPortalPage() {
 
   const handleLoginSubmit = async (e?: React.FormEvent, bypassPin?: string) => {
     if (e) e.preventDefault();
-    const pinToTest = (bypassPin || loginPin).trim().toLowerCase();
+    const pinToTest = (bypassPin || loginPin).trim();
     if (!pinToTest && !bypassPin) return;
 
     setLoginLoading(true);
     setLoginError("");
 
-    const ACCEPTED_PINS = ["apparrel2026", "1234", "admin123", "admin", "password", "apparrel", "secret", "master", "0000", "2026"];
-
     try {
-      const ok = await verifyAdminPasskey(pinToTest);
-      if (ok || ACCEPTED_PINS.includes(pinToTest) || Boolean(bypassPin)) {
+      const res = await verifyAdminPasskey(pinToTest);
+      if (res.authorized && res.token) {
         localStorage.setItem("apparrel_admin_auth", "true");
-        localStorage.setItem("apparrel_admin_token", "adm_" + Date.now());
+        localStorage.setItem("apparrel_admin_token", res.token);
         setIsAuthenticated(true);
         success("Access Granted", "Welcome to the Executive Operations & Restock Hub.");
       } else {
-        setLoginError("Invalid secret passkey. (Default: apparrel2026 or 1234)");
+        setLoginError("Invalid administrator passkey.");
         error("Access Denied", "Incorrect PIN code");
       }
     } catch {
-      if (ACCEPTED_PINS.includes(pinToTest) || Boolean(bypassPin)) {
-        localStorage.setItem("apparrel_admin_auth", "true");
-        setIsAuthenticated(true);
-        success("Access Granted", "Welcome to Admin Portal.");
-      } else {
-        setLoginError("Invalid PIN code. Try: apparrel2026 or 1234");
-      }
+      setLoginError("Verification service unavailable.");
     } finally {
       setLoginLoading(false);
     }
@@ -357,7 +350,7 @@ export function AdminPortalPage() {
                   type="password"
                   value={loginPin}
                   onChange={(e) => setLoginPin(e.target.value)}
-                  placeholder="Enter: apparrel2026 or 1234"
+                  placeholder="Enter administrator passkey"
                   autoFocus
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white font-mono transition-all"
                 />
@@ -1277,10 +1270,10 @@ export function AdminPortalPage() {
                     </div>
                   </div>
 
-                  {/* Courier & 1-Click Advancement Controls */}
+                  {/* Tracking & 1-Click Advancement Controls */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                     <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-                      <span>Courier: {ord.courierName}</span>
+                      <span>Tracking: {ord.trackingCode}</span>
                       <span>•</span>
                       <span>ETA: {ord.estimatedDelivery}</span>
                     </div>

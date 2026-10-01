@@ -100,7 +100,7 @@ export function HomePage() {
                   className="btn-secondary text-xs sm:text-sm py-3.5 px-6 rounded-full"
                 >
                   <Truck className="w-4 h-4 text-emerald-600" />
-                  <span>Live Delivery Map</span>
+                  <span>Track Order</span>
                 </Link>
               </div>
 

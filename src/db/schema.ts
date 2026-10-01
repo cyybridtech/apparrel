@@ -14,7 +14,7 @@ export const categories = mysqlTable("categories", {
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
-  icon: varchar("50", { length: 50 }).notNull().default("Sparkles"),
+  icon: varchar("icon", { length: 50 }).notNull().default("Sparkles"),
   itemCount: int("item_count").notNull().default(0),
   bannerImage: text("banner_image"),
   featured: boolean("featured").notNull().default(false),

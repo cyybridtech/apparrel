@@ -1,27 +1,47 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { fetchProductBySlug, Product } from "../lib/api";
 import { formatPrice } from "../lib/utils";
+import { QuickViewModal } from "../components/shop/QuickViewModal";
 
 export function WishlistPage() {
   const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
-  const handleMoveToBag = (item: any) => {
-    addToCart({
-      productId: item.id,
-      slug: item.slug,
-      name: item.name,
-      brand: item.brand,
-      category: item.category,
-      sizeLabel: "Standard",
-      image: item.image,
-      unitPriceCents: item.priceCents,
-      sku: `WSH-${item.id}`,
-    });
-    removeFromWishlist(item.id);
+  const handleMoveToBag = async (item: any) => {
+    setLoadingId(item.id);
+    try {
+      const data = await fetchProductBySlug(item.slug);
+      if (data?.product) {
+        if (data.product.sizes.length === 1) {
+          addToCart({
+            productId: data.product.id,
+            slug: data.product.slug,
+            name: data.product.name,
+            brand: data.product.brand,
+            category: data.product.category,
+            sizeLabel: data.product.sizes[0].label,
+            image: data.product.images[0] || item.image,
+            unitPriceCents: data.product.priceCents,
+            sku: data.product.sku,
+          });
+          removeFromWishlist(item.id);
+        } else {
+          // Open size selection modal for multi-size products
+          setSelectedProduct(data.product);
+        }
+      }
+    } catch {
+      navigate(`/product/${item.slug}`);
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   return (
@@ -31,7 +51,7 @@ export function WishlistPage() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600 mb-1">
             <Heart className="w-4 h-4 fill-rose-500" />
-            <span>Saved Essentials</span>
+            <span>Saved Items</span>
           </div>
           <h1 className="text-3xl font-black font-heading text-slate-950">
             My Wishlist ({wishlist.length})
@@ -93,10 +113,11 @@ export function WishlistPage() {
 
                 <button
                   onClick={() => handleMoveToBag(item)}
-                  className="w-full btn-primary text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                  disabled={loadingId === item.id}
+                  className="w-full btn-primary text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Move to Bag</span>
+                  <span>{loadingId === item.id ? "Loading..." : "Select Size & Move to Bag"}</span>
                 </button>
               </div>
             </div>
@@ -108,7 +129,7 @@ export function WishlistPage() {
             <Heart className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="font-heading font-bold text-base text-slate-900">
+            <h3 className="font-heading font-bold text-base text-slate-950">
               Your wishlist is empty
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -120,6 +141,12 @@ export function WishlistPage() {
           </Link>
         </div>
       )}
+
+      {/* Quick View Modal for Size Variant Selection */}
+      <QuickViewModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </div>
   );
 }
