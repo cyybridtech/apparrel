@@ -58,40 +58,17 @@ const ARTICLES: EditorialArticle[] = [
     heroImage: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1200",
     excerpt: "A deep dive into the 30% concentration extrait de parfum formulation behind our most coveted olfactive creation.",
     quote: "A fragrance should arrive before you enter the room and linger long after you depart.",
-    author: "Master Parfumeur",
+    author: "Maison Olfactive Desk",
     contentParagraphs: [
-      "Crafted at a 30% pure oil concentration, Royal Amber & Smoked Oud combines wild-harvested Cambodian agarwood with golden amber resin and dry Haitian vetiver. The formulation undergoes a 90-day cold maceration process to achieve its intoxicating, multifaceted trail.",
-      "The result is an extrait de parfum with over 16 hours of projection on skin, opening with crisp pink peppercorn and frankincense before settling into a warm, intoxicating veil of smoked woods."
+      "Unlike conventional commercial perfumes diluted with excess alcohol, our Extrait collection maintains an uncompromising 30% pure perfume oil concentration.",
+      "Smoked Cambodian agarwood is aged for 24 months before blending with resinous amber, pink peppercorns, and Madagascar bourbon vanilla, providing a 14-hour skin projection that matures dynamically with body heat."
     ],
     featuredProduct: {
-      slug: "royal-amber-smoked-oud-extrait",
-      name: "Royal Amber & Smoked Oud Extrait",
-      brand: "PARFUMS D'OR",
-      priceCents: 125000,
+      slug: "royal-amber-extrait-de-parfum",
+      name: "Royal Amber Extrait De Parfum",
+      brand: "MAISON NOIR",
+      priceCents: 85000,
       image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=600",
-    },
-  },
-  {
-    id: "art-3",
-    slug: "court-heritage-footwear-engineering",
-    title: "The 1985 Court Silhouette Reimagined in Italian Leather",
-    category: "FOOTWEAR ARCHIVE",
-    date: "Spring 2026",
-    readTime: "6 min read",
-    heroImage: "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1200",
-    excerpt: "Merging vintage basketball heritage with Tuscan full-grain tumbled calfskin and encapsulated air cushioning.",
-    quote: "Heritage is not about replicating the past; it is about honoring timeless craftsmanship.",
-    author: "Kicks Ghana Workshop",
-    contentParagraphs: [
-      "The Court Heritage 85 began with a simple ambition: to take the quintessential retro high-top silhouette and rebuild it using luxury bespoke bootmaking standards. We selected full-grain tumbled Italian leather that molds uniquely to the wearer's foot over time.",
-      "The sole unit integrates an encapsulated polyurethane air bladder for modern shock absorption, hand-stitched to the upper with durable waxed nylon cord to eliminate adhesive separation."
-    ],
-    featuredProduct: {
-      slug: "retro-high-court-heritage-sneakers",
-      name: "Court Heritage 85 High-Top Sneaker",
-      brand: "KICKS GH",
-      priceCents: 145000,
-      image: "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=600",
     },
   },
 ];
@@ -101,149 +78,140 @@ export function EditorialPage() {
   const [selectedArticle, setSelectedArticle] = useState<EditorialArticle>(ARTICLES[0]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 animate-fadeIn pb-16">
-      {/* Header */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 shadow-sm">
-        <div className="max-w-2xl space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-            <BookOpen className="w-4 h-4 text-slate-900" />
-            <span>The Style Journal & Craftsmanship Archive</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black font-heading text-slate-950">
-            The Apparrel Editorial.
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 pt-16 pb-20 space-y-16 animate-fadeIn">
+      {/* Editorial Header */}
+      <div className="relative py-20 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200/80 text-center">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-slate-100 border border-slate-200 text-slate-900">
+            <BookOpen className="w-3.5 h-3.5" />
+            Apparrel Journal & Lookbook
+          </span>
+          <h1 className="text-4xl sm:text-6xl font-black font-heading tracking-tight text-slate-950">
+            The Atelier Journal
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            In-depth stories on bespoke textile engineering, artisanal fragrance distillation, luxury horology, and high-fashion aesthetics.
+          <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Essays on architectural tailoring, material integrity, and the subcultures shaping contemporary West African luxury.
           </p>
         </div>
       </div>
 
-      {/* Featured Main Story */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xl grid grid-cols-1 lg:grid-cols-12">
-        {/* Left Visual (7 cols) */}
-        <div className="lg:col-span-7 relative aspect-[4/3] lg:aspect-auto bg-slate-950 overflow-hidden">
-          <img
-            src={selectedArticle.heroImage}
-            alt={selectedArticle.title}
-            className="w-full h-full object-cover opacity-90"
-          />
-          <div className="absolute top-4 left-4">
-            <span className="bg-slate-950/90 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-amber-400/20 backdrop-blur-md">
-              {selectedArticle.category}
-            </span>
-          </div>
-        </div>
-
-        {/* Right Article Body (5 cols) */}
-        <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-              <span>{selectedArticle.date}</span>
-              <span>•</span>
-              <span>{selectedArticle.readTime}</span>
-              <span>•</span>
-              <span>By {selectedArticle.author}</span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-black font-heading text-slate-950 leading-tight">
-              {selectedArticle.title}
-            </h2>
-
-            {/* Quote callout */}
-            <div className="p-4 rounded-2xl bg-slate-50 border-l-4 border-slate-950 text-slate-800 text-xs italic space-y-1">
-              <Quote className="w-4 h-4 text-slate-400" />
-              <p>"{selectedArticle.quote}"</p>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-              {selectedArticle.contentParagraphs.map((p, idx) => (
-                <p key={idx}>{p}</p>
-              ))}
-            </div>
-          </div>
-
-          {/* Shop the Story Card */}
-          <div className="pt-4 border-t border-slate-100">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2 font-heading">
-              Featured In This Story:
-            </span>
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Main Feature Story */}
+          <div className="lg:col-span-8 space-y-10">
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden space-y-6">
+              <div className="aspect-[16/9] w-full overflow-hidden relative bg-slate-100">
                 <img
-                  src={selectedArticle.featuredProduct.image}
-                  alt={selectedArticle.featuredProduct.name}
-                  className="w-12 h-12 rounded-xl object-cover bg-white border border-slate-200 shrink-0"
+                  src={selectedArticle.heroImage}
+                  alt={selectedArticle.title}
+                  className="w-full h-full object-cover"
                 />
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">
-                    {selectedArticle.featuredProduct.brand}
-                  </span>
-                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">
-                    {selectedArticle.featuredProduct.name}
-                  </h4>
-                  <span className="text-xs font-black text-slate-950 font-heading">
-                    {formatPrice(selectedArticle.featuredProduct.priceCents)}
-                  </span>
-                </div>
-              </div>
-
-              <Link
-                to={`/product/${selectedArticle.featuredProduct.slug}`}
-                className="btn-primary text-xs py-2 px-3.5 rounded-xl flex items-center gap-1 shrink-0"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Shop Piece</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Article Navigation Carousel */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold font-heading text-slate-950">
-          More Journal Stories
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {ARTICLES.map((art) => (
-            <div
-              key={art.id}
-              onClick={() => setSelectedArticle(art)}
-              className={`p-5 rounded-3xl border transition-all cursor-pointer space-y-3 ${
-                selectedArticle.id === art.id
-                  ? "bg-slate-950 text-white border-slate-950 shadow-xl"
-                  : "bg-white text-slate-900 border-slate-200 hover:border-slate-400"
-              }`}
-            >
-              <span
-                className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${
-                  selectedArticle.id === art.id
-                    ? "bg-amber-400/20 text-amber-400 border border-amber-400/30"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {art.category}
-              </span>
-              <h4 className="text-sm font-bold font-heading line-clamp-2">
-                {art.title}
-              </h4>
-              <p
-                className={`text-xs line-clamp-2 ${
-                  selectedArticle.id === art.id ? "text-slate-400" : "text-slate-500"
-                }`}
-              >
-                {art.excerpt}
-              </p>
-              <div className="flex items-center justify-between text-[11px] font-semibold pt-2">
-                <span>{art.readTime}</span>
-                <span className="flex items-center gap-1 font-bold">
-                  <span>Read Story</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                <span className="absolute top-4 left-4 px-3 py-1 bg-slate-950/80 backdrop-blur-md text-white rounded-full text-xs font-mono font-bold uppercase tracking-wider">
+                  {selectedArticle.category}
                 </span>
               </div>
+
+              <div className="p-6 sm:p-10 space-y-6">
+                <div className="flex items-center gap-3 text-xs font-mono text-slate-500 font-bold">
+                  <span>{selectedArticle.date}</span>
+                  <span>•</span>
+                  <span>{selectedArticle.readTime}</span>
+                  <span>•</span>
+                  <span>By {selectedArticle.author}</span>
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-black font-heading text-slate-950 leading-tight">
+                  {selectedArticle.title}
+                </h2>
+
+                <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
+                  {selectedArticle.excerpt}
+                </p>
+
+                {/* Pull Quote */}
+                <div className="p-6 sm:p-8 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <Quote className="w-8 h-8 text-slate-400" />
+                  <p className="text-base sm:text-lg font-serif italic text-slate-900 font-medium">
+                    "{selectedArticle.quote}"
+                  </p>
+                  <span className="text-xs font-mono text-slate-500 block">— {selectedArticle.author}</span>
+                </div>
+
+                {/* Body Paragraphs */}
+                <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  {selectedArticle.contentParagraphs.map((p, pIdx) => (
+                    <p key={pIdx}>{p}</p>
+                  ))}
+                </div>
+
+                {/* Shop The Look Callout */}
+                <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={selectedArticle.featuredProduct.image}
+                      alt={selectedArticle.featuredProduct.name}
+                      className="w-16 h-16 rounded-xl object-cover bg-white border border-slate-200"
+                    />
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-slate-500 font-bold">Shop The Look</span>
+                      <h4 className="text-sm font-bold text-slate-950 font-heading">
+                        {selectedArticle.featuredProduct.name}
+                      </h4>
+                      <p className="text-xs font-mono font-bold text-slate-900">
+                        {formatPrice(selectedArticle.featuredProduct.priceCents)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/product/${selectedArticle.featuredProduct.slug}`}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>View Piece</span>
+                  </Link>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Sidebar Articles List */}
+          <div className="lg:col-span-4 space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">
+              Curated Articles
+            </h3>
+
+            <div className="space-y-4">
+              {ARTICLES.map((article) => {
+                const isActive = article.id === selectedArticle.id;
+                return (
+                  <button
+                    key={article.id}
+                    onClick={() => setSelectedArticle(article)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all flex gap-4 ${
+                      isActive
+                        ? "bg-white border-slate-900 shadow-md"
+                        : "bg-white border-slate-200/80 hover:border-slate-300"
+                    }`}
+                  >
+                    <img
+                      src={article.heroImage}
+                      alt={article.title}
+                      className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-100"
+                    />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono text-slate-500 font-bold uppercase block">
+                        {article.category} • {article.readTime}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-950 line-clamp-2 mt-1">
+                        {article.title}
+                      </h4>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

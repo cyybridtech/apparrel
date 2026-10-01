@@ -104,10 +104,6 @@ export function AdminPortalPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockHealthFilter, setStockHealthFilter] = useState<"all" | "critical" | "low" | "healthy">("all");
-  const [catalogViewMode, setCatalogViewMode] = useState<"grid" | "table">("grid");
-
-  // Custom restock input mapping { [productId_sizeLabel]: string }
-  const [customRestockInputs, setCustomRestockInputs] = useState<Record<string, string>>({});
 
   // Add / Edit Product Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -402,41 +398,41 @@ export function AdminPortalPage() {
   // If not authenticated, render luxury lock screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-16 animate-fadeIn">
-        <div className="w-full max-w-md bg-[#0e0e12] rounded-3xl border border-white/10 shadow-2xl p-6 sm:p-10 space-y-6 relative overflow-hidden text-white">
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] animate-fadeIn">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-10 space-y-6 relative overflow-hidden text-slate-900">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-xl mb-2">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-950 text-amber-400 shadow-xl mb-2">
               <Lock className="w-8 h-8" />
             </div>
-            <span className="text-[10px] font-mono tracking-widest text-indigo-400 uppercase bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20 inline-block">
+            <span className="text-[10px] font-mono font-bold tracking-widest text-slate-700 uppercase bg-slate-100 px-3 py-1 rounded-full border border-slate-200 inline-block">
               Operations Protected
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif text-white">
+            <h2 className="text-2xl sm:text-3xl font-black font-heading text-slate-950">
               Atelier Executive Vault
             </h2>
-            <p className="text-xs text-neutral-400 max-w-xs mx-auto font-light">
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Secure operations dashboard for 1-click inventory restocking, live courier dispatch, and product drops.
             </p>
           </div>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                 Secret Passkey / PIN
               </label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <KeyRound className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="password"
                   value={loginPin}
                   onChange={(e) => setLoginPin(e.target.value)}
                   placeholder="Enter administrator passkey"
                   autoFocus
-                  className="w-full pl-10 pr-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/60 font-mono transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono transition-all"
                 />
               </div>
               {loginError && (
-                <p className="text-xs text-rose-400 font-mono mt-2 flex items-center gap-1">
+                <p className="text-xs text-rose-600 font-bold mt-2 flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   <span>{loginError}</span>
                 </p>
@@ -446,7 +442,7 @@ export function AdminPortalPage() {
             <button
               type="submit"
               disabled={loginLoading || !loginPin}
-              className="w-full py-3.5 bg-white text-black font-semibold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+              className="w-full py-3.5 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
             >
               {loginLoading ? "Authenticating..." : "Unlock Operations Hub"}
               <ArrowRight className="w-4 h-4" />
@@ -454,16 +450,16 @@ export function AdminPortalPage() {
           </form>
 
           {/* Quick Demo Bypass for Instant Testing */}
-          <div className="pt-4 border-t border-white/[0.06] text-center space-y-3">
-            <span className="text-[11px] text-neutral-400 block font-light">
+          <div className="pt-4 border-t border-slate-100 text-center space-y-3">
+            <span className="text-[11px] text-slate-500 block">
               Local testing or review session?
             </span>
             <button
               type="button"
               onClick={() => handleLoginSubmit(undefined, "apparrel2026")}
-              className="w-full py-3 px-4 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200 text-xs font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm"
             >
-              <Zap className="w-4 h-4 text-indigo-400" />
+              <Zap className="w-4 h-4 text-amber-500" />
               <span>⚡ Instant Manager Access (Auto-PIN)</span>
             </button>
           </div>
@@ -494,21 +490,21 @@ export function AdminPortalPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8 text-neutral-100 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8 text-slate-900 animate-fadeIn">
       {/* Executive Header Banner */}
-      <div className="bg-[#0e0e12] rounded-3xl border border-white/[0.08] p-5 sm:p-8 shadow-2xl relative overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-sm relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-mono tracking-widest text-neutral-400 uppercase">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-mono font-bold tracking-widest text-slate-500 uppercase">
                 Atelier Executive Matrix • Node Active
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif text-white">
+            <h1 className="text-2xl sm:text-3xl font-black font-heading text-slate-950">
               Inventory Restock & Order Dispatch Hub
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1 font-light">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Real-time stock management, variant restockers, and courier routing.
             </p>
           </div>
@@ -516,7 +512,7 @@ export function AdminPortalPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={openCreateModal}
-              className="px-4 py-2.5 bg-white text-black font-semibold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-all flex items-center gap-2 shadow-lg"
+              className="px-4 py-2.5 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-black transition-all flex items-center gap-2 shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>New Product Drop</span>
@@ -525,16 +521,16 @@ export function AdminPortalPage() {
             <button
               onClick={loadAllAdminData}
               disabled={isRefreshing}
-              className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-neutral-300 hover:text-white hover:bg-white/[0.08] transition-colors flex items-center gap-1.5 text-xs font-mono"
+              className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-200 transition-colors flex items-center gap-1.5 text-xs font-mono font-semibold"
               title="Sync & Refresh catalog"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-indigo-400" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
               <span className="hidden sm:inline">Sync</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-rose-400 hover:text-rose-300 hover:bg-white/[0.08] transition-colors"
+              className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors"
               title="Lock Session"
             >
               <LogOut className="w-4 h-4" />
@@ -543,45 +539,45 @@ export function AdminPortalPage() {
         </div>
 
         {/* Real-time KPI Stats Strip */}
-        <div className="mt-6 pt-6 border-t border-white/[0.06] grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white/[0.02] p-3.5 sm:p-4 rounded-2xl border border-white/[0.06]">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
+        <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
               Active Drops
             </span>
-            <span className="text-xl sm:text-2xl font-serif text-white mt-0.5 block">
+            <span className="text-xl sm:text-2xl font-black font-heading text-slate-950 mt-0.5 block">
               {products.length} Items
             </span>
-            <span className="text-[10px] text-emerald-400 font-mono">5 Departments</span>
+            <span className="text-[10px] text-emerald-600 font-mono font-semibold">5 Departments</span>
           </div>
 
-          <div className="bg-white/[0.02] p-3.5 sm:p-4 rounded-2xl border border-white/[0.06]">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
+          <div className="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
               Total In-Stock Units
             </span>
-            <span className="text-xl sm:text-2xl font-serif text-white mt-0.5 block">
+            <span className="text-xl sm:text-2xl font-black font-heading text-slate-950 mt-0.5 block">
               {totalStockUnits} Units
             </span>
-            <span className="text-[10px] text-neutral-500 font-mono">All Size Variants</span>
+            <span className="text-[10px] text-slate-500 font-mono">All Size Variants</span>
           </div>
 
-          <div className="bg-white/[0.02] p-3.5 sm:p-4 rounded-2xl border border-white/[0.06]">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
+          <div className="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
               Stock Valuation
             </span>
-            <span className="text-xl sm:text-2xl font-serif text-indigo-400 mt-0.5 block truncate">
+            <span className="text-xl sm:text-2xl font-black font-heading text-slate-950 mt-0.5 block truncate">
               {formatPrice(totalValuationCents)}
             </span>
-            <span className="text-[10px] text-neutral-500 font-mono">Retail Value</span>
+            <span className="text-[10px] text-slate-500 font-mono">Retail Value</span>
           </div>
 
-          <div className="bg-white/[0.02] p-3.5 sm:p-4 rounded-2xl border border-white/[0.06]">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block">
+          <div className="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
               Restock Attention
             </span>
-            <span className={`text-xl sm:text-2xl font-serif mt-0.5 block ${lowStockCount > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+            <span className={`text-xl sm:text-2xl font-black font-heading mt-0.5 block ${lowStockCount > 0 ? "text-rose-600" : "text-emerald-600"}`}>
               {lowStockCount} Low Variants
             </span>
-            <span className="text-[10px] text-neutral-500 font-mono">
+            <span className="text-[10px] text-slate-500 font-mono">
               {lowStockCount > 0 ? "Action Required" : "All Healthy"}
             </span>
           </div>
@@ -589,14 +585,14 @@ export function AdminPortalPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-3 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
         {[
           {
             id: "restock",
             label: "1-Click Restock Matrix",
             icon: RefreshCw,
             badge: lowStockCount > 0 ? `${lowStockCount} low` : undefined,
-            badgeColor: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+            badgeColor: "bg-rose-100 text-rose-800 font-bold",
           },
           {
             id: "products",
@@ -608,7 +604,7 @@ export function AdminPortalPage() {
             label: `Orders & Dispatch (${orders.length})`,
             icon: Truck,
             badge: orders.filter((o) => o.status !== "delivered").length ? `${orders.filter((o) => o.status !== "delivered").length} active` : undefined,
-            badgeColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+            badgeColor: "bg-amber-100 text-amber-800 font-bold",
           },
           {
             id: "analytics",
@@ -629,8 +625,8 @@ export function AdminPortalPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider transition-all shrink-0 ${
                 active
-                  ? "bg-white text-black font-semibold shadow-md"
-                  : "text-neutral-400 hover:bg-white/[0.04] hover:text-white"
+                  ? "bg-slate-950 text-white font-bold shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -651,25 +647,25 @@ export function AdminPortalPage() {
       {activeTab === "restock" && (
         <div className="space-y-6">
           {/* Controls Bar */}
-          <div className="bg-[#0e0e12] rounded-2xl border border-white/[0.08] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
             <div className="relative w-full md:w-80">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search SKU, title, or brand..."
-                className="w-full pl-10 pr-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500/60"
+                className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-neutral-400">Department:</span>
+                <span className="text-xs font-semibold text-slate-600">Department:</span>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-3 py-2 bg-[#14141a] border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
                 >
                   <option value="all">All Departments ({products.length})</option>
                   <option value="tops">Tops & Shirts</option>
@@ -681,11 +677,11 @@ export function AdminPortalPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-neutral-400">Health:</span>
+                <span className="text-xs font-semibold text-slate-600">Health:</span>
                 <select
                   value={stockHealthFilter}
                   onChange={(e) => setStockHealthFilter(e.target.value as any)}
-                  className="px-3 py-2 bg-[#14141a] border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
                 >
                   <option value="all">All Stock Levels</option>
                   <option value="critical">Critical (&le; 5 units)</option>
@@ -699,15 +695,14 @@ export function AdminPortalPage() {
           {/* Restock Grid Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredProducts.map((product) => {
-              const isCrit = product.sizes.some((s) => s.stock <= 5);
               return (
                 <div
                   key={product.id}
-                  className="p-5 sm:p-6 rounded-3xl bg-[#0e0e12] border border-white/[0.08] shadow-xl space-y-4 relative overflow-hidden"
+                  className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4 relative overflow-hidden"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 overflow-hidden shrink-0">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
                         <img
                           src={product.images[0]}
                           alt={product.name}
@@ -715,13 +710,13 @@ export function AdminPortalPage() {
                         />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] font-mono uppercase text-indigo-400 tracking-wider">
+                        <span className="text-[10px] font-mono font-bold uppercase text-slate-500 tracking-wider">
                           {product.brand} • {product.sku}
                         </span>
-                        <h3 className="text-sm font-semibold text-white truncate">
+                        <h3 className="text-sm font-bold text-slate-950 truncate font-heading">
                           {product.name}
                         </h3>
-                        <p className="text-xs font-mono text-neutral-400">
+                        <p className="text-xs font-mono text-slate-600">
                           {formatPrice(product.priceCents)} • {product.totalStock} total units
                         </p>
                       </div>
@@ -729,7 +724,7 @@ export function AdminPortalPage() {
 
                     <button
                       onClick={() => handleBulkRestockProduct(product, 10)}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-300 text-xs font-mono uppercase tracking-wider transition-colors shrink-0"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-900 text-xs font-mono font-bold uppercase tracking-wider transition-colors shrink-0"
                       title="Add +10 to all sizes"
                     >
                       +10 All Sizes
@@ -737,24 +732,23 @@ export function AdminPortalPage() {
                   </div>
 
                   {/* Size Variants Matrix */}
-                  <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                    <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block">
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block font-bold">
                       Size Variants & Instant Incrementers
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {product.sizes.map((sz) => {
                         const isLow = sz.stock <= 5;
-                        const key = `${product.id}_${sz.label}`;
                         return (
                           <div
                             key={sz.label}
-                            className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between gap-2"
+                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2"
                           >
                             <div>
-                              <span className="text-xs font-semibold text-white block">{sz.label}</span>
+                              <span className="text-xs font-bold text-slate-900 block">{sz.label}</span>
                               <span
                                 className={`text-[10px] font-mono ${
-                                  isLow ? "text-rose-400 font-bold" : "text-neutral-400"
+                                  isLow ? "text-rose-600 font-bold" : "text-slate-500"
                                 }`}
                               >
                                 {sz.stock} in stock {isLow && "⚠️"}
@@ -764,21 +758,21 @@ export function AdminPortalPage() {
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleQuickRestock(product.id, sz.label, 5)}
-                                className="px-2 py-1 bg-white/[0.05] hover:bg-white/10 text-white rounded text-[10px] font-mono"
+                                className="px-2 py-1 bg-white hover:bg-slate-200 text-slate-900 border border-slate-200 rounded text-[10px] font-mono font-bold"
                                 title="Add +5"
                               >
                                 +5
                               </button>
                               <button
                                 onClick={() => handleQuickRestock(product.id, sz.label, 15)}
-                                className="px-2 py-1 bg-white/[0.05] hover:bg-white/10 text-white rounded text-[10px] font-mono"
+                                className="px-2 py-1 bg-white hover:bg-slate-200 text-slate-900 border border-slate-200 rounded text-[10px] font-mono font-bold"
                                 title="Add +15"
                               >
                                 +15
                               </button>
                               <button
                                 onClick={() => handleQuickRestock(product.id, sz.label, 50)}
-                                className="px-2 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded text-[10px] font-mono"
+                                className="px-2 py-1 bg-slate-900 hover:bg-black text-white rounded text-[10px] font-mono font-bold"
                                 title="Add +50"
                               >
                                 +50
@@ -802,10 +796,10 @@ export function AdminPortalPage() {
       {activeTab === "products" && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <h3 className="text-lg font-serif text-white">Full Store Catalog ({products.length})</h3>
+            <h3 className="text-lg font-black font-heading text-slate-950">Full Store Catalog ({products.length})</h3>
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 bg-white text-black font-semibold text-xs font-mono uppercase rounded-xl hover:bg-neutral-200 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-slate-950 text-white font-bold text-xs font-mono uppercase rounded-xl hover:bg-black transition-colors flex items-center gap-2 shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>Create Product Drop</span>
@@ -816,32 +810,32 @@ export function AdminPortalPage() {
             {products.map((p) => (
               <div
                 key={p.id}
-                className="p-5 rounded-3xl bg-[#0e0e12] border border-white/[0.08] shadow-xl space-y-3 relative group"
+                className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-3 relative group"
               >
-                <div className="aspect-[4/3] rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden relative">
+                <div className="aspect-[4/3] rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden relative">
                   <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
-                  <span className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-mono px-2 py-0.5 rounded-full border border-white/10">
+                  <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
                     {p.category.toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-indigo-400">{p.brand}</span>
-                  <h4 className="text-sm font-semibold text-white truncate">{p.name}</h4>
-                  <p className="text-xs font-mono text-neutral-300 mt-1">{formatPrice(p.priceCents)}</p>
+                  <span className="text-[10px] font-mono uppercase text-slate-500 font-bold">{p.brand}</span>
+                  <h4 className="text-sm font-bold text-slate-950 truncate font-heading">{p.name}</h4>
+                  <p className="text-xs font-mono font-bold text-slate-900 mt-1">{formatPrice(p.priceCents)}</p>
                 </div>
-                <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-neutral-400">{p.totalStock} units across {p.sizes.length} sizes</span>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-slate-500">{p.totalStock} units across {p.sizes.length} sizes</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => openEditModal(p)}
-                      className="p-2 rounded-lg bg-white/[0.04] text-neutral-300 hover:text-white hover:bg-white/10"
+                      className="p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-950 hover:bg-slate-200"
                       title="Edit Product"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteProduct(p.id, p.name)}
-                      className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                      className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100"
                       title="Delete Product"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -859,37 +853,37 @@ export function AdminPortalPage() {
       {/* ========================================================================= */}
       {activeTab === "orders" && (
         <div className="space-y-6">
-          <h3 className="text-lg font-serif text-white">Live Courier & Order Dispatch Queue</h3>
+          <h3 className="text-lg font-black font-heading text-slate-950">Live Courier & Order Dispatch Queue</h3>
           <div className="space-y-4">
             {orders.map((ord) => (
               <div
                 key={ord.id}
-                className="p-5 sm:p-6 rounded-3xl bg-[#0e0e12] border border-white/[0.08] shadow-xl space-y-4"
+                className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div>
-                    <span className="text-xs font-mono text-indigo-400 font-bold">{ord.orderNo}</span>
-                    <h4 className="text-sm font-semibold text-white">{ord.customerName} ({ord.phone})</h4>
+                    <span className="text-xs font-mono text-slate-900 font-bold">{ord.orderNo}</span>
+                    <h4 className="text-sm font-bold text-slate-950 font-heading">{ord.customerName} ({ord.phone})</h4>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-emerald-400 font-bold">{formatPrice(ord.totalCents)}</span>
-                    <span className="text-[10px] font-mono uppercase bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">
+                    <span className="text-xs font-mono font-bold text-slate-900">{formatPrice(ord.totalCents)}</span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-100 text-slate-800 px-2.5 py-1 rounded-full border border-slate-200">
                       {ord.status.replace(/_/g, " ")}
                     </span>
                   </div>
                 </div>
 
-                <div className="text-xs text-neutral-400 font-mono">
+                <div className="text-xs text-slate-600 font-mono">
                   <p>Destination: {ord.address}, {ord.city} ({ord.region})</p>
                   <p>Items: {ord.items.map((i) => `${i.qty}x ${i.name} (${i.sizeLabel})`).join(", ")}</p>
                 </div>
 
                 <div className="pt-2 flex items-center justify-between">
-                  <span className="text-xs font-mono text-neutral-500">Tracking: {ord.trackingCode}</span>
+                  <span className="text-xs font-mono text-slate-500">Tracking: {ord.trackingCode}</span>
                   {ord.status !== "delivered" && (
                     <button
                       onClick={() => handleAdvanceOrder(ord)}
-                      className="px-4 py-2 bg-white text-black font-semibold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-black transition-colors flex items-center gap-1.5 shadow-sm"
                     >
                       <span>Advance Stage</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -908,25 +902,25 @@ export function AdminPortalPage() {
       {activeTab === "analytics" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-[#0e0e12] p-6 rounded-3xl border border-white/[0.08] space-y-1">
-              <span className="text-xs font-mono text-neutral-500 uppercase">Gross Verified Revenue</span>
-              <h3 className="text-3xl font-serif text-white">{formatPrice(analytics?.totalRevenueCents || 489000)}</h3>
-              <p className="text-xs text-emerald-400 font-mono">+32% Drop Performance</p>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-1">
+              <span className="text-xs font-mono text-slate-500 uppercase font-bold">Gross Verified Revenue</span>
+              <h3 className="text-3xl font-black font-heading text-slate-950">{formatPrice(analytics?.totalRevenueCents || 489000)}</h3>
+              <p className="text-xs text-emerald-600 font-mono font-bold">+32% Drop Performance</p>
             </div>
-            <div className="bg-[#0e0e12] p-6 rounded-3xl border border-white/[0.08] space-y-1">
-              <span className="text-xs font-mono text-neutral-500 uppercase">Total Orders</span>
-              <h3 className="text-3xl font-serif text-white">{orders.length}</h3>
-              <p className="text-xs text-neutral-400 font-mono">100% Paystack Authenticated</p>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-1">
+              <span className="text-xs font-mono text-slate-500 uppercase font-bold">Total Orders</span>
+              <h3 className="text-3xl font-black font-heading text-slate-950">{orders.length}</h3>
+              <p className="text-xs text-slate-500 font-mono">100% Paystack Authenticated</p>
             </div>
-            <div className="bg-[#0e0e12] p-6 rounded-3xl border border-white/[0.08] space-y-1">
-              <span className="text-xs font-mono text-neutral-500 uppercase">Units Dispatched</span>
-              <h3 className="text-3xl font-serif text-white">{analytics?.totalUnitsSold || 24}</h3>
-              <p className="text-xs text-neutral-400 font-mono">Across 5 departments</p>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-1">
+              <span className="text-xs font-mono text-slate-500 uppercase font-bold">Units Dispatched</span>
+              <h3 className="text-3xl font-black font-heading text-slate-950">{analytics?.totalUnitsSold || 24}</h3>
+              <p className="text-xs text-slate-500 font-mono">Across 5 departments</p>
             </div>
-            <div className="bg-[#0e0e12] p-6 rounded-3xl border border-white/[0.08] space-y-1">
-              <span className="text-xs font-mono text-neutral-500 uppercase">Vault Inventory Valuation</span>
-              <h3 className="text-3xl font-serif text-indigo-400">{formatPrice(totalValuationCents)}</h3>
-              <p className="text-xs text-neutral-400 font-mono">{totalStockUnits} total units in stock</p>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-1">
+              <span className="text-xs font-mono text-slate-500 uppercase font-bold">Vault Inventory Valuation</span>
+              <h3 className="text-3xl font-black font-heading text-slate-950">{formatPrice(totalValuationCents)}</h3>
+              <p className="text-xs text-slate-500 font-mono">{totalStockUnits} total units in stock</p>
             </div>
           </div>
         </div>
@@ -936,11 +930,11 @@ export function AdminPortalPage() {
       {/* TAB 5: AUDIT LOGS */}
       {/* ========================================================================= */}
       {activeTab === "logs" && (
-        <div className="p-6 rounded-3xl bg-[#0e0e12] border border-white/[0.08] overflow-x-auto">
-          <h3 className="text-sm font-mono uppercase tracking-widest text-neutral-400 mb-4">Stock Movement Audit Trail</h3>
-          <table className="w-full text-left font-mono text-xs text-neutral-300">
+        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm overflow-x-auto">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono mb-4">Stock Movement Audit Trail</h3>
+          <table className="w-full text-left font-mono text-xs text-slate-700">
             <thead>
-              <tr className="border-b border-white/[0.08] text-neutral-500 uppercase text-[10px]">
+              <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px]">
                 <th className="py-3">Timestamp</th>
                 <th className="py-3">Product</th>
                 <th className="py-3">Variant</th>
@@ -949,15 +943,15 @@ export function AdminPortalPage() {
                 <th className="py-3">Activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-slate-100">
               {logs.map((l) => (
                 <tr key={l.id}>
-                  <td className="py-3 text-neutral-500">{formatDateTime(l.createdAt)}</td>
-                  <td className="py-3 text-white font-semibold">{l.productName}</td>
-                  <td className="py-3">{l.sizeLabel}</td>
-                  <td className="py-3 text-emerald-400">+{l.changeQty}</td>
-                  <td className="py-3">{l.newStock}</td>
-                  <td className="py-3 text-neutral-400">{l.reason}</td>
+                  <td className="py-3 text-slate-500">{formatDateTime(l.createdAt)}</td>
+                  <td className="py-3 text-slate-950 font-bold">{l.productName}</td>
+                  <td className="py-3 font-semibold">{l.sizeLabel}</td>
+                  <td className="py-3 text-emerald-600 font-bold">+{l.changeQty}</td>
+                  <td className="py-3 font-bold">{l.newStock}</td>
+                  <td className="py-3 text-slate-600">{l.reason}</td>
                 </tr>
               ))}
             </tbody>
@@ -969,20 +963,20 @@ export function AdminPortalPage() {
       {/* ADD / EDIT PRODUCT MODAL (HIGH-TIER STRUCTURED BUILDER) */}
       {/* ========================================================================= */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-3xl bg-[#0b0b0e] text-white rounded-3xl shadow-2xl border border-white/10 overflow-hidden max-h-[92vh] flex flex-col">
-            <div className="p-5 sm:p-6 border-b border-white/[0.08] bg-[#111116] flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-3xl bg-white text-slate-900 rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="font-serif text-lg text-white">
+                <h3 className="font-heading font-black text-lg text-slate-950">
                   {editingProduct ? "Edit Luxury Product Drop" : "Create New Luxury Product Drop"}
                 </h3>
-                <p className="text-xs text-neutral-400 font-light">
+                <p className="text-xs text-slate-500">
                   Configure titles, department templates, images, and individual variant stock.
                 </p>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-2 rounded-full bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -991,43 +985,43 @@ export function AdminPortalPage() {
             <form onSubmit={handleSaveProductSubmit} className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
               {/* Basic Details */}
               <div>
-                <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block mb-3">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-3 font-bold">
                   1. General Specification
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Title *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Title *</label>
                     <input
                       type="text"
                       required
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
                       placeholder="e.g. Heavyweight Boxy Noir Tee"
-                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Brand / Studio *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Brand / Studio *</label>
                     <input
                       type="text"
                       required
                       value={formBrand}
                       onChange={(e) => setFormBrand(e.target.value)}
                       placeholder="e.g. APPARREL ATELIER"
-                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Department *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
                     <select
                       value={formCategory}
                       onChange={(e) => {
                         setFormCategory(e.target.value);
                         handleApplySizeTemplate(e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 bg-[#14141a] border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
                     >
                       <option value="tops">Tops & Shirts</option>
                       <option value="sneakers">Sneakers & Kicks</option>
@@ -1038,37 +1032,37 @@ export function AdminPortalPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Sub-Category</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Sub-Category</label>
                     <input
                       type="text"
                       value={formSubCategory}
                       onChange={(e) => setFormSubCategory(e.target.value)}
                       placeholder="e.g. 450 GSM Organic Cotton"
-                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Price (Pesewas / Cents) *</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Price (Pesewas / Cents) *</label>
                     <input
                       type="number"
                       required
                       value={formPriceCents}
                       onChange={(e) => setFormPriceCents(Number(e.target.value))}
                       placeholder="45000"
-                      className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white font-mono focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                     />
-                    <span className="text-[10px] font-mono text-neutral-400 mt-1 block">
-                      Equivalent: <strong className="text-white">{formatPrice(formPriceCents)}</strong>
+                    <span className="text-[10px] font-mono text-slate-500 mt-1 block">
+                      Equivalent: <strong className="text-slate-950">{formatPrice(formPriceCents)}</strong>
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Badge / Tag</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Badge / Tag</label>
                     <select
                       value={formBadge}
                       onChange={(e) => setFormBadge(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-[#14141a] border border-white/[0.08] rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/60"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
                     >
                       <option value="NEW DROP">NEW DROP</option>
                       <option value="EXCLUSIVE">EXCLUSIVE</option>
@@ -1080,30 +1074,30 @@ export function AdminPortalPage() {
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-xs font-mono text-neutral-400 mb-1 uppercase">Description & Craftsmanship</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Description & Craftsmanship</label>
                   <textarea
                     rows={2}
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     placeholder="Describe tailoring, textiles, and design philosophy..."
-                    className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500/60"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                   />
                 </div>
               </div>
 
               {/* Interactive Size Variant Builder */}
-              <div className="pt-4 border-t border-white/[0.06]">
+              <div className="pt-4 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block">
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block font-bold">
                       2. Size Variants & Initial Stock
                     </span>
-                    <p className="text-xs text-neutral-400">Add or adjust sizes and set exact opening inventory.</p>
+                    <p className="text-xs text-slate-500">Add or adjust sizes and set exact opening inventory.</p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddSizeVariant}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-xs font-mono uppercase"
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200 text-xs font-mono uppercase font-bold"
                   >
                     + Add Size
                   </button>
@@ -1111,14 +1105,14 @@ export function AdminPortalPage() {
 
                 <div className="space-y-2">
                   {formSizes.map((sz, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex-1">
                         <input
                           type="text"
                           value={sz.label}
                           onChange={(e) => handleSizeVariantChange(idx, "label", e.target.value)}
                           placeholder="Size (e.g. M, US 10)"
-                          className="w-full px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white"
+                          className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 font-semibold"
                         />
                       </div>
                       <div className="w-28">
@@ -1127,13 +1121,13 @@ export function AdminPortalPage() {
                           value={sz.stock}
                           onChange={(e) => handleSizeVariantChange(idx, "stock", e.target.value)}
                           placeholder="Stock"
-                          className="w-full px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-white font-mono"
+                          className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 font-mono font-bold"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveSizeVariant(idx)}
-                        className="p-1.5 text-neutral-500 hover:text-rose-400 transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1143,8 +1137,8 @@ export function AdminPortalPage() {
               </div>
 
               {/* Image Manager & Presets */}
-              <div className="pt-4 border-t border-white/[0.06]">
-                <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest block mb-2">
+              <div className="pt-4 border-t border-slate-100">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-2 font-bold">
                   3. Image Gallery & 1-Click Luxury Presets
                 </span>
 
@@ -1154,12 +1148,12 @@ export function AdminPortalPage() {
                     value={formNewImageUrl}
                     onChange={(e) => setFormNewImageUrl(e.target.value)}
                     placeholder="Paste image URL (https://...)"
-                    className="flex-1 px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white"
+                    className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
                   />
                   <button
                     type="button"
                     onClick={handleAddImage}
-                    className="px-4 py-2.5 bg-white text-black text-xs font-mono uppercase font-semibold rounded-xl hover:bg-neutral-200"
+                    className="px-4 py-2.5 bg-slate-950 text-white text-xs font-mono uppercase font-bold rounded-xl hover:bg-black"
                   >
                     Add Image
                   </button>
@@ -1168,7 +1162,7 @@ export function AdminPortalPage() {
                 {/* Thumbnails */}
                 <div className="flex flex-wrap gap-3 mb-4">
                   {formImages.map((img, idx) => (
-                    <div key={idx} className="relative w-20 h-20 rounded-xl bg-white/[0.02] border border-white/10 overflow-hidden group">
+                    <div key={idx} className="relative w-20 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden group shadow-sm">
                       <img src={img} alt="Product" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -1192,7 +1186,7 @@ export function AdminPortalPage() {
                         setFormCategory(preset.cat);
                         handleApplySizeTemplate(preset.cat);
                       }}
-                      className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded-lg text-[10px] font-mono text-neutral-300"
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[10px] font-mono font-semibold text-slate-700"
                     >
                       + {preset.label}
                     </button>
@@ -1201,17 +1195,17 @@ export function AdminPortalPage() {
               </div>
 
               {/* Submit / Cancel Actions */}
-              <div className="pt-5 border-t border-white/[0.08] flex justify-end gap-3 shrink-0">
+              <div className="pt-5 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-3 rounded-xl border border-white/10 text-xs font-mono uppercase text-neutral-400 hover:text-white"
+                  className="px-5 py-3 rounded-xl border border-slate-200 text-xs font-bold font-mono uppercase text-slate-600 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-white text-black font-semibold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-neutral-200 transition-colors shadow-xl"
+                  className="px-6 py-3 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-xl hover:bg-black transition-colors shadow-lg"
                 >
                   {editingProduct ? "Save Product Changes" : "Publish Product Drop"}
                 </button>

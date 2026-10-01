@@ -38,7 +38,7 @@ export default function App() {
           <AuthProvider>
             <WishlistProvider>
               <CartProvider>
-                <div className="min-h-screen flex flex-col bg-[#070709] text-neutral-100 font-sans selection:bg-indigo-500 selection:text-white">
+                <div className="min-h-screen flex flex-col bg-[#fafafa] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
                   {/* Top Announcement & Currency Bar */}
                   <AnnouncementBar />
 

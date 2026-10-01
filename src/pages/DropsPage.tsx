@@ -60,193 +60,203 @@ const DROPS: DropEvent[] = [
   },
 ];
 
-export function DropsPage() {
-  const { formatPrice } = useCurrency();
-  const { success } = useToast();
-  const [notifiedDrops, setNotifiedDrops] = useState<string[]>([]);
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
-    hours: 47,
-    minutes: 59,
-    seconds: 45,
+function CountdownClock({ targetDate }: { targetDate: Date }) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
   });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
+    const calculateTime = () => {
+      const difference = targetDate.getTime() - new Date().getTime();
+      if (difference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
       });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    };
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 text-center">
+      <div className="px-3 py-2 bg-slate-900 text-white rounded-xl min-w-[54px] shadow-sm">
+        <span className="text-base sm:text-xl font-mono font-black block">{String(timeLeft.days).padStart(2, "0")}</span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-mono">Days</span>
+      </div>
+      <span className="text-slate-400 font-bold">:</span>
+      <div className="px-3 py-2 bg-slate-900 text-white rounded-xl min-w-[54px] shadow-sm">
+        <span className="text-base sm:text-xl font-mono font-black block">{String(timeLeft.hours).padStart(2, "0")}</span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-mono">Hours</span>
+      </div>
+      <span className="text-slate-400 font-bold">:</span>
+      <div className="px-3 py-2 bg-slate-900 text-white rounded-xl min-w-[54px] shadow-sm">
+        <span className="text-base sm:text-xl font-mono font-black block">{String(timeLeft.minutes).padStart(2, "0")}</span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-mono">Mins</span>
+      </div>
+      <span className="text-slate-400 font-bold">:</span>
+      <div className="px-3 py-2 bg-slate-900 text-amber-400 rounded-xl min-w-[54px] shadow-sm">
+        <span className="text-base sm:text-xl font-mono font-black block">{String(timeLeft.seconds).padStart(2, "0")}</span>
+        <span className="text-[9px] uppercase tracking-wider text-slate-400 font-mono">Secs</span>
+      </div>
+    </div>
+  );
+}
+
+export function DropsPage() {
+  const { formatPrice } = useCurrency();
+  const { success } = useToast();
+  const [subscribedDrops, setSubscribedDrops] = useState<string[]>([]);
 
   const handleNotifyMe = (dropId: string, title: string) => {
-    if (notifiedDrops.includes(dropId)) return;
-    setNotifiedDrops([...notifiedDrops, dropId]);
-    success("VIP Alert Set", `We will send you early access SMS & email notifications 15 minutes before ${title} drops!`);
+    if (subscribedDrops.includes(dropId)) return;
+    setSubscribedDrops([...subscribedDrops, dropId]);
+    success("VIP Alert Reserved", `You will receive an exclusive release link 15 minutes before ${title} goes live.`);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 animate-fadeIn pb-16">
-      {/* Hero Header */}
-      <div className="bg-slate-950 text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-2xl border border-slate-800">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-            <Flame className="w-4 h-4 text-amber-400" />
-            <span>Limited Release Calendar</span>
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 pt-16 pb-20 space-y-16 animate-fadeIn">
+      {/* Header Banner */}
+      <div className="relative py-20 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200/80 overflow-hidden">
+        <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-900 text-xs font-bold uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Official Atelier Release Calendar</span>
           </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black font-heading tracking-tight text-white leading-tight">
-            Curated Drops & Private Releases.
+          <h1 className="text-4xl sm:text-6xl font-black font-heading tracking-tight text-slate-950">
+            Limited Edition Drops
           </h1>
-
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Every drop is strictly limited, authenticated, and individually numbered. Set your alerts to secure access before quantities sell out.
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Strictly limited releases engineered with artisanal craftsmanship. Each piece is individually numbered and never re-issued once allocated.
           </p>
-
-          {/* Countdown Clock */}
-          <div className="pt-2 flex items-center gap-3">
-            <div className="bg-slate-900/80 border border-slate-800 px-4 py-2.5 rounded-2xl text-center">
-              <span className="block text-2xl font-mono font-black text-white">{String(timeLeft.hours).padStart(2, "0")}</span>
-              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hours</span>
-            </div>
-            <span className="text-2xl font-black text-slate-600">:</span>
-            <div className="bg-slate-900/80 border border-slate-800 px-4 py-2.5 rounded-2xl text-center">
-              <span className="block text-2xl font-mono font-black text-white">{String(timeLeft.minutes).padStart(2, "0")}</span>
-              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Mins</span>
-            </div>
-            <span className="text-2xl font-black text-slate-600">:</span>
-            <div className="bg-slate-900/80 border border-slate-800 px-4 py-2.5 rounded-2xl text-center">
-              <span className="block text-2xl font-mono font-black text-amber-400">{String(timeLeft.seconds).padStart(2, "0")}</span>
-              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Secs</span>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Drops Grid */}
-      <div className="space-y-8">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-heading text-slate-950">
-              Upcoming & Live Releases
-            </h2>
-            <p className="text-xs text-slate-500">Scheduled luxury drops for the Spring/Summer 2026 season</p>
-          </div>
-          <span className="text-xs font-mono font-bold text-slate-500">
-            {DROPS.length} Scheduled Drops
-          </span>
-        </div>
+      {/* Drops Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {DROPS.map((drop, idx) => {
+          const isLive = drop.status === "LIVE NOW";
+          const isSubbed = subscribedDrops.includes(drop.id);
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {DROPS.map((drop) => {
-            const isNotified = notifiedDrops.includes(drop.id);
-            const isLive = drop.status === "LIVE NOW";
+          return (
+            <div
+              key={drop.id}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-0 transition-all hover:border-slate-400"
+            >
+              {/* Media Half */}
+              <div className="lg:col-span-7 relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-auto overflow-hidden bg-slate-100 min-h-[340px]">
+                <img
+                  src={drop.image}
+                  alt={drop.title}
+                  className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider uppercase backdrop-blur-md shadow-sm ${
+                      isLive
+                        ? "bg-emerald-500 text-slate-950"
+                        : "bg-slate-950/80 text-white border border-white/20"
+                    }`}
+                  >
+                    {drop.status}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider uppercase bg-white/90 text-slate-900 backdrop-blur-md shadow-sm">
+                    {drop.piecesCount} Pieces Only
+                  </span>
+                </div>
+              </div>
 
-            return (
-              <div
-                key={drop.id}
-                className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl hover:border-slate-300 transition-all duration-300"
-              >
-                {/* Visual image */}
-                <div className="relative aspect-[16/10] bg-slate-950 overflow-hidden">
-                  <img
-                    src={drop.image}
-                    alt={drop.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-                  />
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md ${
-                        isLive
-                          ? "bg-emerald-500 text-white animate-pulse"
-                          : "bg-slate-950/90 backdrop-blur-md text-amber-400 border border-amber-400/30"
-                      }`}
-                    >
-                      {drop.status}
+              {/* Information Half */}
+              <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono uppercase tracking-widest text-slate-500 font-bold">
+                      Drop 0{idx + 1} • {drop.category.toUpperCase()}
                     </span>
-                    <span className="bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-mono px-3 py-1 rounded-full border border-white/20">
-                      {drop.piecesCount} Units Worldwide
+                    <span className="text-lg font-black font-heading text-slate-950">
+                      {formatPrice(drop.priceCents)}
                     </span>
                   </div>
 
-                  <div className="absolute bottom-4 right-4 bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white font-heading font-black text-sm">
-                    {formatPrice(drop.priceCents)}
+                  <div>
+                    <h3 className="text-2xl font-black font-heading text-slate-950 leading-snug">
+                      {drop.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 font-semibold">{drop.subtitle}</p>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {drop.description}
+                  </p>
+
+                  {/* Bullet Specs */}
+                  <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-700">
+                    {drop.specs.map((spec, sIdx) => (
+                      <div key={sIdx} className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{spec}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 sm:p-8 space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      {drop.category} • Scheduled Drop
-                    </span>
-                    <h3 className="text-xl sm:text-2xl font-black font-heading text-slate-950">
-                      {drop.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium">{drop.subtitle}</p>
-                    <p className="text-xs text-slate-600 leading-relaxed pt-1">
-                      {drop.description}
-                    </p>
+                {/* Footer Controls */}
+                <div className="pt-4 border-t border-slate-100 space-y-4">
+                  {!isLive ? (
+                    <>
+                      <div>
+                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-2 font-bold">
+                          Release Countdown
+                        </span>
+                        <CountdownClock targetDate={drop.releaseDate} />
+                      </div>
 
-                    <div className="pt-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-900 block mb-1.5">
-                        Key Specifications:
-                      </span>
-                      <ul className="grid grid-cols-2 gap-1 text-[11px] text-slate-600">
-                        {drop.specs.map((spec, i) => (
-                          <li key={i} className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
-                            <span>{spec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
-                    {isLive ? (
-                      <Link
-                        to="/shop"
-                        className="w-full btn-primary text-xs py-3 rounded-2xl flex items-center justify-center gap-2"
-                      >
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span>Shop Drop Right Now</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    ) : (
                       <button
                         onClick={() => handleNotifyMe(drop.id, drop.title)}
-                        className={`w-full py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                          isNotified
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                            : "bg-slate-950 hover:bg-slate-800 text-white shadow-lg"
+                        disabled={isSubbed}
+                        className={`w-full py-3.5 px-6 rounded-2xl text-xs font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm ${
+                          isSubbed
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                            : "bg-slate-950 hover:bg-black text-white"
                         }`}
                       >
-                        {isNotified ? (
+                        {isSubbed ? (
                           <>
                             <Check className="w-4 h-4 text-emerald-600" />
-                            <span>VIP Notification Active</span>
+                            <span>VIP Notification Confirmed</span>
                           </>
                         ) : (
                           <>
                             <Bell className="w-4 h-4 text-amber-400" />
-                            <span>Notify Me on Release</span>
+                            <span>Notify Me When Live</span>
                           </>
                         )}
                       </button>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <Link
+                      to="/shop"
+                      className="w-full py-3.5 px-6 rounded-2xl text-xs font-bold font-mono uppercase tracking-wider bg-slate-950 text-white hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Flame className="w-4 h-4 text-rose-400" />
+                      <span>Shop Live Capsule Now</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

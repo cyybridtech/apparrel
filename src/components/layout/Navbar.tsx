@@ -77,8 +77,8 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
       <header
         className={`sticky top-0 z-40 transition-all duration-300 ${
           scrolled
-            ? "bg-[#070709]/95 backdrop-blur-xl shadow-2xl border-b border-white/[0.08]"
-            : "bg-[#070709] border-b border-white/[0.05]"
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200/80"
+            : "bg-white border-b border-slate-100"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,7 +87,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
             <div className="flex items-center lg:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 -ml-2 text-neutral-300 hover:text-white rounded-lg"
+                className="p-2 -ml-2 text-slate-700 hover:text-slate-950 rounded-xl"
                 aria-label="Toggle Navigation"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -97,10 +97,10 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
             {/* Brand Logo */}
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2.5 group">
-                <span className="font-serif tracking-tighter text-2xl sm:text-3xl text-white uppercase group-hover:opacity-90 transition-opacity font-bold">
-                  APPARREL<span className="text-indigo-400">.</span>
+                <span className="font-heading font-black tracking-tight text-2xl sm:text-3xl text-slate-950 uppercase group-hover:opacity-80 transition-opacity">
+                  APPARREL<span className="text-slate-400">.</span>
                 </span>
-                <span className="hidden sm:inline-block text-[9px] font-mono font-medium tracking-widest uppercase bg-white/[0.04] text-neutral-400 px-2 py-0.5 rounded-full border border-white/[0.08]">
+                <span className="hidden sm:inline-block text-[10px] font-mono font-bold tracking-widest uppercase bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200">
                   ATELIER
                 </span>
               </Link>
@@ -113,15 +113,15 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                     <Link
                       key={link.path}
                       to={link.path}
-                      className={`relative px-3.5 py-1.5 text-xs font-medium tracking-wider uppercase rounded-full transition-all duration-200 flex items-center gap-1.5 ${
+                      className={`relative px-3.5 py-1.5 text-xs font-semibold tracking-wide rounded-full transition-all duration-150 flex items-center gap-1.5 ${
                         active
-                          ? "bg-white text-black font-semibold shadow-sm"
-                          : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
+                          ? "bg-slate-950 text-white shadow-sm"
+                          : "text-slate-600 hover:text-slate-950 hover:bg-slate-50"
                       }`}
                     >
                       {link.label}
                       {link.badge && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       )}
                     </Link>
                   );
@@ -134,7 +134,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               {/* Search Trigger */}
               <button
                 onClick={onOpenSearch}
-                className="p-2 text-neutral-400 hover:text-white hover:bg-white/[0.04] rounded-full transition-colors"
+                className="p-2 text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-full transition-colors"
                 title="Search luxury vault (Press /)"
                 aria-label="Search"
               >
@@ -144,13 +144,13 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               {/* Wishlist Icon */}
               <Link
                 to="/wishlist"
-                className="relative p-2 text-neutral-400 hover:text-white hover:bg-white/[0.04] rounded-full transition-colors"
+                className="relative p-2 text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-full transition-colors"
                 title="Wishlist"
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
                 {totalWishlistCount > 0 && (
-                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[9px] font-mono font-bold text-white bg-indigo-600 rounded-full">
+                  <span className="absolute top-1 right-1 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[10px] font-mono font-bold text-white bg-slate-900 rounded-full">
                     {totalWishlistCount}
                   </span>
                 )}
@@ -160,21 +160,21 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               {user ? (
                 <Link
                   to="/account"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all group"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all group"
                   title="VIP Account Dashboard"
                 >
-                  <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-mono">
+                  <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-mono font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden md:inline text-xs font-medium text-white truncate max-w-[100px]">
+                  <span className="hidden md:inline text-xs font-bold text-slate-800 truncate max-w-[100px]">
                     {user.name.split(" ")[0]}
                   </span>
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
                 </Link>
               ) : (
                 <button
                   onClick={() => openAuthModal("login")}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider text-neutral-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all"
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all"
                 >
                   <User className="w-3.5 h-3.5" />
                   <span>VIP Access</span>
@@ -184,18 +184,18 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               {/* Shopping Bag Button */}
               <button
                 onClick={openCart}
-                className="bg-white text-black font-medium text-xs py-2 px-3 sm:px-4 rounded-full flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md ml-1"
+                className="bg-slate-950 text-white font-medium text-xs py-2 px-3 sm:px-4 rounded-full flex items-center gap-2 hover:bg-black transition-all shadow-sm ml-1"
                 aria-label="Cart"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline font-semibold tracking-wider uppercase text-[11px]">Vault</span>
+                <span className="hidden sm:inline font-semibold tracking-wider uppercase text-[11px]">Bag</span>
                 {totalItemsCount > 0 && (
-                  <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-mono font-bold text-white bg-black rounded-full">
+                  <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-mono font-bold text-slate-900 bg-white rounded-full">
                     {totalItemsCount}
                   </span>
                 )}
                 {subtotalCents > 0 && (
-                  <span className="hidden md:inline text-[11px] text-neutral-600 font-mono pl-1 border-l border-neutral-300">
+                  <span className="hidden md:inline text-[11px] text-slate-300 font-mono pl-1 border-l border-slate-700">
                     {formatPrice(subtotalCents)}
                   </span>
                 )}
@@ -204,7 +204,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               {/* Discreet Secret Admin Button */}
               <button
                 onClick={() => setAdminModalOpen(true)}
-                className="p-2 text-neutral-600 hover:text-neutral-300 hover:bg-white/[0.04] rounded-full transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
                 title="Atelier Admin Portal (Ctrl+Shift+A)"
                 aria-label="Secret Admin Restock"
               >
@@ -216,32 +216,32 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
 
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-white/[0.08] bg-[#0b0b0e] px-4 pt-4 pb-8 space-y-3 animate-fadeIn">
+          <div className="lg:hidden border-t border-slate-100 bg-white px-4 pt-4 pb-8 space-y-3 animate-fadeIn shadow-xl">
             {/* VIP Status row on Mobile */}
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] mb-3 flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-3 flex items-center justify-between">
               {user ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-mono text-sm">
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-mono text-sm font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{user.name}</p>
-                    <p className="text-[11px] font-mono text-amber-400 flex items-center gap-1">
+                    <p className="text-sm font-bold text-slate-900">{user.name}</p>
+                    <p className="text-[11px] font-mono text-amber-600 font-semibold flex items-center gap-1">
                       <Crown className="w-3 h-3" /> {user.tier} Tier ({user.points} pts)
                     </p>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm font-medium text-white">VIP Club Privileges</p>
-                  <p className="text-xs text-neutral-400">Sign in for member drops & private reservations</p>
+                  <p className="text-sm font-bold text-slate-900">VIP Club Privileges</p>
+                  <p className="text-xs text-slate-500">Sign in for member drops & private reservations</p>
                 </div>
               )}
               {user ? (
                 <Link
                   to="/account"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-mono uppercase text-white hover:bg-white/20"
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-xs font-semibold uppercase text-white hover:bg-black"
                 >
                   Dashboard
                 </Link>
@@ -251,14 +251,14 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                     setMobileMenuOpen(false);
                     openAuthModal("login");
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-mono uppercase font-semibold"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold uppercase"
                 >
                   Sign In
                 </button>
               )}
             </div>
 
-            <div className="text-[10px] font-mono font-semibold text-neutral-500 uppercase tracking-widest px-2">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
               Collections & Features
             </div>
             {NAV_LINKS.map((link) => (
@@ -266,29 +266,29 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                 key={link.path}
                 to={link.path}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium tracking-wide transition-colors ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-colors ${
                   isActive(link.path)
-                    ? "bg-white text-black font-semibold"
-                    : "text-neutral-300 hover:bg-white/[0.04]"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 <span>{link.label}</span>
                 {link.badge && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                     {link.badge}
                   </span>
                 )}
               </Link>
             ))}
 
-            <div className="pt-3 border-t border-white/[0.08] flex flex-col gap-2">
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               <Link
                 to="/track"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.03] text-neutral-200 text-sm font-medium"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-50 text-slate-900 text-sm font-semibold"
               >
                 <span>Live Order Telemetry</span>
-                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
                   Real-Time
                 </span>
               </Link>
@@ -298,7 +298,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                   setMobileMenuOpen(false);
                   setAdminModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-mono text-neutral-500 hover:text-neutral-300"
+                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 hover:text-slate-800"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Atelier Administration Vault</span>

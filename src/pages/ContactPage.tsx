@@ -27,18 +27,18 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070709] text-white pt-24 pb-20">
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 pt-16 pb-20">
       {/* Header */}
-      <div className="py-16 px-4 sm:px-6 lg:px-8 border-b border-white/[0.06] text-center">
+      <div className="py-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200/80 text-center">
         <div className="max-w-3xl mx-auto">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-widest bg-white/[0.04] border border-white/[0.08] text-indigo-400 mb-4">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-slate-100 border border-slate-200 text-slate-900 mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             Direct Concierge Service
           </span>
-          <h1 className="text-4xl sm:text-5xl font-serif tracking-tight mb-4">
+          <h1 className="text-4xl sm:text-5xl font-black font-heading text-slate-950 tracking-tight mb-4">
             Private Client Relations
           </h1>
-          <p className="text-neutral-400 font-light text-base sm:text-lg max-w-xl mx-auto">
+          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
             Our luxury styling advisors and order concierge specialists are at your command 24 hours a day, 7 days a week.
           </p>
         </div>
@@ -50,8 +50,8 @@ export const ContactPage: React.FC = () => {
           {/* Contact Details & Channels */}
           <div className="lg:col-span-5 space-y-8">
             <div>
-              <h2 className="text-2xl font-serif text-white mb-3">Atelier Channels</h2>
-              <p className="text-neutral-400 text-sm font-light">
+              <h2 className="text-2xl font-black font-heading text-slate-950 mb-2">Atelier Channels</h2>
+              <p className="text-slate-500 text-xs sm:text-sm">
                 Reach out directly or connect with an authorized VIP representative.
               </p>
             </div>
@@ -59,15 +59,15 @@ export const ContactPage: React.FC = () => {
             <div className="space-y-4">
               <a 
                 href="mailto:concierge@apparrel.luxury"
-                className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-indigo-500/40 transition-colors group"
+                className="flex items-start gap-4 p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-slate-400 hover:shadow-md transition-all group"
               >
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform shadow-sm">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-white">Client Concierge Email</h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">concierge@apparrel.luxury</p>
-                  <p className="text-[11px] font-mono text-indigo-400 mt-1">Average response: &lt; 20 minutes</p>
+                  <h3 className="text-sm font-bold text-slate-950 font-heading">Client Concierge Email</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">concierge@apparrel.luxury</p>
+                  <p className="text-[11px] font-mono text-emerald-600 font-semibold mt-1">Average response: &lt; 20 minutes</p>
                 </div>
               </a>
 
@@ -75,62 +75,62 @@ export const ContactPage: React.FC = () => {
                 href="https://wa.me/233240000000"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/40 transition-colors group"
+                className="flex items-start gap-4 p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-md transition-all group"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-white">VIP WhatsApp Direct Desk</h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">+233 24 000 0000 (Global Client Desk)</p>
-                  <p className="text-[11px] font-mono text-emerald-400 mt-1">Instant priority routing</p>
+                  <h3 className="text-sm font-bold text-slate-950 font-heading">VIP WhatsApp Direct Desk</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">+233 24 000 0000 (Global Client Desk)</p>
+                  <p className="text-[11px] font-mono text-emerald-600 font-semibold mt-1">Instant priority routing</p>
                 </div>
               </a>
 
-              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center shadow-sm">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-white">Flagship Atelier & Showroom</h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <h3 className="text-sm font-bold text-slate-950 font-heading">Flagship Atelier & Showroom</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                     No. 18 Airport High Street, Residential Area<br />
                     Accra, Greater Accra Region, Ghana
                   </p>
-                  <p className="text-[11px] font-mono text-neutral-500 mt-1">Visits by private appointment only</p>
+                  <p className="text-[11px] font-mono text-slate-400 mt-1">Visits by private appointment only</p>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-950/20 to-transparent border border-white/[0.06]">
-              <div className="flex items-center gap-3 mb-2 text-indigo-400">
+            <div className="p-6 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl">
+              <div className="flex items-center gap-3 mb-2 text-amber-400">
                 <ShieldCheck className="w-5 h-5" />
-                <h4 className="text-sm font-semibold text-white">VIP Priority Protection</h4>
+                <h4 className="text-sm font-bold font-heading text-white">VIP Priority Protection</h4>
               </div>
-              <p className="text-xs text-neutral-400 leading-relaxed font-light">
-                All order issues, size swaps, and custom alterations undergo white-glove review with complimentary insured pickup.
+              <p className="text-xs text-slate-300 leading-relaxed font-light">
+                All order inquiries, size swaps, and custom alterations undergo white-glove review with complimentary insured courier pickup.
               </p>
             </div>
           </div>
 
           {/* Contact Form */}
           <div className="lg:col-span-7">
-            <div className="p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/[0.08] relative overflow-hidden">
+            <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200/80 shadow-sm relative overflow-hidden">
               {submitted ? (
                 <div className="text-center py-16 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400">
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto text-emerald-600">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl font-serif text-white">Inquiry Dispatched to Concierge</h3>
-                  <p className="text-neutral-400 text-sm max-w-md mx-auto font-light">
-                    Thank you, {formData.name}. A luxury styling consultant has received your ticket and will follow up with you at <strong className="text-white">{formData.email}</strong> shortly.
+                  <h3 className="text-2xl font-bold font-heading text-slate-950">Inquiry Dispatched to Concierge</h3>
+                  <p className="text-slate-600 text-sm max-w-md mx-auto">
+                    Thank you, {formData.name}. A luxury styling consultant has received your ticket and will follow up at <strong className="text-slate-900">{formData.email}</strong> shortly.
                   </p>
                   <button
                     onClick={() => {
                       setSubmitted(false);
                       setFormData({ name: "", email: "", orderId: "", subject: "concierge", message: "" });
                     }}
-                    className="mt-6 px-6 py-2.5 rounded-full text-xs font-mono uppercase tracking-wider bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+                    className="mt-6 px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-900 hover:bg-slate-200 transition-colors font-mono"
                   >
                     Send Another Message
                   </button>
@@ -138,15 +138,15 @@ export const ContactPage: React.FC = () => {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-serif text-white mb-1">Direct Consultation Form</h3>
-                    <p className="text-xs text-neutral-400 font-light">
+                    <h3 className="text-xl font-bold font-heading text-slate-950 mb-1">Direct Consultation Form</h3>
+                    <p className="text-xs text-slate-500">
                       Please provide details regarding your inquiry for dedicated routing.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                         Full Name *
                       </label>
                       <input
@@ -155,11 +155,11 @@ export const ContactPage: React.FC = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Alexander McQueen"
-                        className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                         Email Address *
                       </label>
                       <input
@@ -168,20 +168,20 @@ export const ContactPage: React.FC = () => {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="client@domain.com"
-                        className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                         Inquiry Nature
                       </label>
                       <select
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        className="w-full px-4 py-3 bg-[#111116] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                       >
                         <option value="concierge">Personal Styling & Sizing Concierge</option>
                         <option value="order">Existing Order Status & Logistics</option>
@@ -191,7 +191,7 @@ export const ContactPage: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                         Order Reference (Optional)
                       </label>
                       <input
@@ -199,13 +199,13 @@ export const ContactPage: React.FC = () => {
                         value={formData.orderId}
                         onChange={(e) => setFormData({ ...formData, orderId: e.target.value })}
                         placeholder="ORD-92841"
-                        className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500/60 font-mono focus:bg-white/[0.05] transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono focus:bg-white transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-neutral-400 mb-2 uppercase">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 font-mono">
                       Message *
                     </label>
                     <textarea
@@ -214,13 +214,13 @@ export const ContactPage: React.FC = () => {
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="Specify your sizing requirements, custom request, or delivery questions..."
-                      className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.05] transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all resize-none"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-white text-black font-medium text-xs font-mono uppercase tracking-widest rounded-xl hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 group"
+                    className="w-full py-4 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-widest rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 group shadow-lg"
                   >
                     Transmit Inquiry to Atelier
                     <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
