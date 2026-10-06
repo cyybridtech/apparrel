@@ -10,6 +10,7 @@ import {
   Tag,
   ShieldCheck,
   CreditCard,
+  Store,
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useCurrency } from "../../context/CurrencyContext";
@@ -68,7 +69,7 @@ export function CartDrawer() {
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-slate-950" />
               <h3 className="font-heading font-bold text-base text-slate-950">
-                Your Shopping Bag ({cart.reduce((s, i) => s + i.qty, 0)})
+                Marketplace Bag ({cart.reduce((s, i) => s + i.qty, 0)})
               </h3>
             </div>
             <button
@@ -114,7 +115,7 @@ export function CartDrawer() {
                     Your bag is empty
                   </h4>
                   <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                    Explore our latest drops across tops, sneakers, fragrances, and timepieces.
+                    Explore curated drops across Footwear, Horology, Streetwear, Audio Tech, and Luxury Leather.
                   </p>
                 </div>
                 <Link
@@ -122,14 +123,14 @@ export function CartDrawer() {
                   onClick={closeCart}
                   className="inline-block btn-primary text-xs py-2.5 px-6"
                 >
-                  Start Shopping
+                  Explore Marketplace
                 </Link>
               </div>
             ) : (
               cart.map((item) => (
                 <div
                   key={`${item.productId}-${item.sizeLabel}`}
-                  className="flex gap-3.5 p-3 rounded-2xl bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 transition-colors"
+                  className="flex gap-3.5 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 hover:border-slate-300 transition-colors"
                 >
                   <img
                     src={item.image}
@@ -139,7 +140,7 @@ export function CartDrawer() {
                   <div className="flex-1 flex flex-col justify-between min-w-0">
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                           {item.brand}
                         </span>
                         <button
@@ -153,8 +154,17 @@ export function CartDrawer() {
                       <h4 className="text-xs font-bold text-slate-900 line-clamp-1 mt-0.5">
                         {item.name}
                       </h4>
-                      <div className="inline-block text-[10px] font-semibold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-md mt-1">
-                        Size: {item.sizeLabel}
+
+                      {/* Seller Tag */}
+                      {item.sellerStore && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-600 font-medium mt-0.5">
+                          <Store className="w-3 h-3 text-slate-400" />
+                          <span className="truncate">{item.sellerStore}</span>
+                        </div>
+                      )}
+
+                      <div className="inline-block text-[10px] font-semibold bg-slate-200/80 text-slate-800 px-2 py-0.5 rounded-md mt-1">
+                        Size / Spec: {item.sizeLabel}
                       </div>
                     </div>
 
@@ -187,94 +197,111 @@ export function CartDrawer() {
             )}
           </div>
 
-          {/* Footer & Checkout Area */}
+          {/* Footer with Summary & Checkout */}
           {cart.length > 0 && (
             <div className="p-5 border-t border-slate-200 bg-white space-y-4">
-              {/* Promo code */}
+              {/* Promo Code Input */}
               {promoCode ? (
-                <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
-                  <div className="flex items-center gap-1.5 font-semibold">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-800 font-medium">
                     <Tag className="w-3.5 h-3.5" />
-                    <span>Promo Applied: {promoCode}</span>
+                    <span>Promo Applied: <strong className="font-mono">{promoCode}</strong> (-10%)</span>
                   </div>
                   <button
                     onClick={removePromoCode}
-                    className="text-slate-400 hover:text-slate-700 p-0.5"
+                    className="text-xs text-emerald-700 hover:text-emerald-900 font-bold"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    Remove
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleApplyPromo} className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Tag className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={inputCode}
-                      onChange={(e) => setInputCode(e.target.value)}
-                      placeholder="Promo code (e.g. FIRST10)"
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 uppercase font-mono"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    placeholder="Promo code (e.g. VIP10)"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value)}
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs uppercase font-mono tracking-wider focus:outline-none focus:border-slate-950"
+                  />
                   <button
                     type="submit"
-                    className="px-3.5 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-black transition-colors"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl transition-colors"
                   >
                     Apply
                   </button>
                 </form>
               )}
 
-              {/* Price Breakdown */}
+              {/* Price Calculation Breakdown */}
               <div className="space-y-1.5 text-xs text-slate-600">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-slate-900">{formatPrice(subtotalCents)}</span>
+                  <span className="font-mono font-medium text-slate-900">
+                    {formatPrice(subtotalCents)}
+                  </span>
                 </div>
+
+                {discountCents > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span>Marketplace Discount</span>
+                    <span className="font-mono">-{formatPrice(discountCents)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
-                  <span>Delivery Dispatch</span>
-                  <span className="font-semibold text-slate-900">
+                  <span>Express Courier Dispatch</span>
+                  <span className="font-mono font-medium text-slate-900">
                     {shippingCents === 0 ? (
-                      <span className="text-emerald-600 font-bold">FREE</span>
+                      <span className="text-emerald-600 font-bold uppercase text-[10px]">FREE</span>
                     ) : (
                       formatPrice(shippingCents)
                     )}
                   </span>
                 </div>
-                {discountCents > 0 && (
-                  <div className="flex justify-between text-emerald-600 font-semibold">
-                    <span>Discount</span>
-                    <span>-{formatPrice(discountCents)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-slate-100 text-sm font-bold text-slate-950">
-                  <span className="font-heading">Total Amount</span>
-                  <span className="font-heading font-black">{formatPrice(totalCents)}</span>
+
+                <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-extrabold text-slate-950">
+                  <span>Total Due</span>
+                  <span className="font-mono">{formatPrice(totalCents)}</span>
                 </div>
               </div>
 
-              {/* Checkout Trigger Button */}
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    closeCart();
-                    openAuthModal("login");
-                  } else {
-                    openCheckout();
-                  }
-                }}
-                className="w-full btn-primary text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10"
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>
-                  {isAuthenticated ? `Pay with Paystack • ${formatPrice(totalCents)}` : "Sign In to Checkout"}
-                </span>
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </button>
+              {/* Checkout Trigger */}
+              {isAuthenticated ? (
+                <button
+                  onClick={openCheckout}
+                  className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 text-xs font-bold shadow-md shadow-slate-950/10"
+                >
+                  <span>Proceed to Paystack Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      closeCart();
+                      openAuthModal("login");
+                    }}
+                    className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 text-xs font-bold shadow-md shadow-slate-950/10"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Sign In to Complete Purchase</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <p className="text-[10px] text-center text-slate-500 font-medium">
+                    New to Cyybrid? You can create a VIP account in 15 seconds.
+                  </p>
+                </div>
+              )}
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>256-bit Encrypted Paystack & Mobile Money Gateway</span>
+              <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 font-medium pt-1">
+                <span className="flex items-center gap-1">
+                  <CreditCard className="w-3 h-3" />
+                  MoMo & Card Split Settlement
+                </span>
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                  Cyybrid Guaranteed Authentic
+                </span>
               </div>
             </div>
           )}

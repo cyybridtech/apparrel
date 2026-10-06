@@ -126,6 +126,8 @@ export function CheckoutModal() {
         deliveryNotes: formData.deliveryNotes,
         items: cart.map((item) => ({
           productId: item.productId,
+          sellerId: item.sellerId,
+          sellerStore: item.sellerStore,
           name: item.name,
           brand: item.brand,
           category: item.category,

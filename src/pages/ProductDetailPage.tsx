@@ -141,6 +141,9 @@ export function ProductDetailPage() {
     addToCart(
       {
         productId: product.id,
+        sellerId: product.sellerId,
+        sellerStore: product.sellerStore,
+        sellerName: product.sellerName,
         slug: product.slug,
         name: product.name,
         brand: product.brand,
@@ -444,6 +447,35 @@ export function ProductDetailPage() {
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Verified Cyybrid Founding Seller Information */}
+            {product.sellerStore && (
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+                      👑
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-950 flex items-center gap-1.5">
+                        <span>{product.sellerStore}</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium">
+                        {product.sellerName ? `Curated by ${product.sellerName}` : "Cyybrid Founding Partner"}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                    VERIFIED VENDOR
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span>Paystack Split Settlement Active</span>
+                  <span className="text-emerald-600 font-semibold">100% Authentic Guarantee</span>
+                </div>
+              </div>
+            )}
 
             {/* Delivery Guarantees */}
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-xs text-slate-600">

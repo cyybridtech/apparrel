@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Star, Eye, ShoppingBag, Sparkles } from "lucide-react";
+import { Heart, Star, Eye, ShoppingBag, Sparkles, Store, ShieldCheck } from "lucide-react";
 import { Product } from "../../lib/api";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -35,6 +35,9 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
       // Direct add if single size
       addToCart({
         productId: product.id,
+        sellerId: product.sellerId,
+        sellerStore: product.sellerStore,
+        sellerName: product.sellerName,
         slug: product.slug,
         name: product.name,
         brand: product.brand,
@@ -99,18 +102,16 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
                 category: product.category,
                 priceCents: product.priceCents,
                 image: primaryImg,
-                rating: product.rating,
-                badge: product.badge,
               });
             }}
             className={`p-2.5 rounded-full backdrop-blur-md shadow-md transition-all ${
               isFavorited
-                ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                ? "bg-rose-50 text-rose-600"
                 : "bg-white/90 text-slate-700 hover:bg-white hover:text-slate-950"
             }`}
-            title={isFavorited ? "Remove from Wishlist" : "Save to Wishlist"}
+            title="Add to Wishlist"
           >
-            <Heart className={`w-4 h-4 ${isFavorited ? "fill-rose-500" : ""}`} />
+            <Heart className={`w-4 h-4 ${isFavorited ? "fill-rose-600" : ""}`} />
           </button>
 
           {onQuickView && (
@@ -144,10 +145,15 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
       {/* Product Information */}
       <div className="p-4 flex flex-col flex-1 justify-between gap-3">
         <div>
-          {/* Brand & Category */}
+          {/* Brand & Seller Store */}
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             <span>{product.brand}</span>
-            <span className="capitalize text-slate-500">{product.subCategory}</span>
+            {product.sellerStore && (
+              <span className="flex items-center gap-1 text-[10px] text-slate-600 font-medium normal-case">
+                <Store className="w-3 h-3 text-slate-400" />
+                <span className="truncate max-w-[110px]">{product.sellerStore}</span>
+              </span>
+            )}
           </div>
 
           {/* Title */}

@@ -13,7 +13,9 @@ import {
   BookOpen,
   Calendar,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Store,
+  ShieldCheck,
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -22,13 +24,14 @@ import { useAuth } from "../../context/AuthContext";
 import { SecretAdminModal } from "./SecretAdminModal";
 
 const NAV_LINKS = [
-  { label: "Collection", path: "/shop" },
+  { label: "Marketplace", path: "/shop" },
+  { label: "Footwear", path: "/shop?category=sneakers" },
+  { label: "Watches", path: "/shop?category=watches" },
+  { label: "Apparel", path: "/shop?category=tops" },
+  { label: "Tech & Audio", path: "/shop?category=tech" },
+  { label: "Leather & Bags", path: "/shop?category=bags" },
   { label: "Drops Calendar", path: "/drops", badge: "Live" },
   { label: "Editorial", path: "/editorial" },
-  { label: "Tops", path: "/shop?category=tops" },
-  { label: "Sneakers", path: "/shop?category=sneakers" },
-  { label: "Fragrances", path: "/shop?category=perfumes" },
-  { label: "Timepieces", path: "/shop?category=watches" },
 ];
 
 interface NavbarProps {
@@ -55,7 +58,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Shortcut Ctrl+Shift+A for secret admin
+  // Shortcut Ctrl+Shift+A for secret admin / seller portal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a") {
@@ -98,10 +101,11 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2.5 group">
                 <span className="font-heading font-black tracking-tight text-2xl sm:text-3xl text-slate-950 uppercase group-hover:opacity-80 transition-opacity">
-                  APPARREL<span className="text-slate-400">.</span>
+                  CYYBRID<span className="text-slate-400">.</span>
                 </span>
-                <span className="hidden sm:inline-block text-[10px] font-mono font-bold tracking-widest uppercase bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200">
-                  ATELIER
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold tracking-widest uppercase bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  MARKETPLACE
                 </span>
               </Link>
 
@@ -135,7 +139,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
               <button
                 onClick={onOpenSearch}
                 className="p-2 text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-full transition-colors"
-                title="Search luxury vault (Press /)"
+                title="Search marketplace (Press /)"
                 aria-label="Search"
               >
                 <Search className="w-5 h-5" />
@@ -158,157 +162,128 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
 
               {/* VIP Account / Auth Trigger */}
               {user ? (
-                <Link
-                  to="/account"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all group"
-                  title="VIP Account Dashboard"
-                >
-                  <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-mono font-bold">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden md:inline text-xs font-bold text-slate-800 truncate max-w-[100px]">
-                    {user.name.split(" ")[0]}
-                  </span>
-                  <Crown className="w-3.5 h-3.5 text-amber-500" />
-                </Link>
+                <div className="relative group">
+                  <button
+                    onClick={() => navigate("/account")}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 hover:border-slate-300 text-xs font-medium text-slate-800 transition-colors"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="hidden md:inline font-bold">{user.name.split(" ")[0]}</span>
+                    <span className="text-[10px] font-mono bg-slate-200/70 text-slate-700 px-1.5 py-0.5 rounded">
+                      {user.tier}
+                    </span>
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => openAuthModal("login")}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all"
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>VIP Access</span>
+                  <span>VIP Sign In</span>
                 </button>
               )}
 
-              {/* Shopping Bag Button */}
+              {/* Seller / Admin Portal Direct Button */}
+              <Link
+                to="/admin"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors shadow-sm"
+                title="Cyybrid Seller Center & Admin Cockpit"
+              >
+                <Store className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden xl:inline">Seller Center</span>
+              </Link>
+
+              {/* Shopping Bag Trigger */}
               <button
                 onClick={openCart}
-                className="bg-slate-950 text-white font-medium text-xs py-2 px-3 sm:px-4 rounded-full flex items-center gap-2 hover:bg-black transition-all shadow-sm ml-1"
-                aria-label="Cart"
+                className="relative flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950 hover:bg-black text-white text-xs font-bold transition-transform active:scale-95 shadow-sm"
+                aria-label="Shopping Cart"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline font-semibold tracking-wider uppercase text-[11px]">Bag</span>
+                <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                <span className="font-mono">{totalItemsCount}</span>
                 {totalItemsCount > 0 && (
-                  <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-mono font-bold text-slate-900 bg-white rounded-full">
-                    {totalItemsCount}
-                  </span>
-                )}
-                {subtotalCents > 0 && (
-                  <span className="hidden md:inline text-[11px] text-slate-300 font-mono pl-1 border-l border-slate-700">
+                  <span className="hidden md:inline font-mono text-[11px] opacity-80 border-l border-slate-700 pl-2">
                     {formatPrice(subtotalCents)}
                   </span>
                 )}
-              </button>
-
-              {/* Discreet Secret Admin Button */}
-              <button
-                onClick={() => setAdminModalOpen(true)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-                title="Atelier Admin Portal (Ctrl+Shift+A)"
-                aria-label="Secret Admin Restock"
-              >
-                <Lock className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Navigation Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-100 bg-white px-4 pt-4 pb-8 space-y-3 animate-fadeIn shadow-xl">
-            {/* VIP Status row on Mobile */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-3 flex items-center justify-between">
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-mono text-sm font-bold">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{user.name}</p>
-                    <p className="text-[11px] font-mono text-amber-600 font-semibold flex items-center gap-1">
-                      <Crown className="w-3 h-3" /> {user.tier} Tier ({user.points} pts)
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm font-bold text-slate-900">VIP Club Privileges</p>
-                  <p className="text-xs text-slate-500">Sign in for member drops & private reservations</p>
-                </div>
-              )}
-              {user ? (
+          <div className="lg:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
+            <div className="grid grid-cols-2 gap-2">
+              {NAV_LINKS.map((link) => (
                 <Link
-                  to="/account"
+                  key={link.path}
+                  to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-xs font-semibold uppercase text-white hover:bg-black"
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between ${
+                    isActive(link.path)
+                      ? "bg-slate-950 text-white"
+                      : "bg-slate-50 text-slate-800 hover:bg-slate-100"
+                  }`}
                 >
-                  Dashboard
+                  <span>{link.label}</span>
+                  {link.badge && (
+                    <span className="text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded-full">
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <Link
+                to="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2"
+              >
+                <Store className="w-4 h-4 text-emerald-400" />
+                <span>Cyybrid Seller Center & Admin Cockpit</span>
+              </Link>
+
+              {user ? (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-700" />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">{user.name}</div>
+                      <div className="text-[10px] text-slate-500">{user.email}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs font-bold text-rose-600 hover:underline"
+                  >
+                    Logout
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => {
-                    setMobileMenuOpen(false);
                     openAuthModal("login");
+                    setMobileMenuOpen(false);
                   }}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold uppercase"
+                  className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold flex items-center justify-center gap-2"
                 >
-                  Sign In
+                  <User className="w-4 h-4" />
+                  <span>VIP Sign In / Register</span>
                 </button>
               )}
-            </div>
-
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
-              Collections & Features
-            </div>
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-colors ${
-                  isActive(link.path)
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <span>{link.label}</span>
-                {link.badge && (
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    {link.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
-
-            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-              <Link
-                to="/track"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-50 text-slate-900 text-sm font-semibold"
-              >
-                <span>Live Order Telemetry</span>
-                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  Real-Time
-                </span>
-              </Link>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setAdminModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 hover:text-slate-800"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Atelier Administration Vault</span>
-              </button>
             </div>
           </div>
         )}
       </header>
 
-      {/* Secret Admin Passkey Modal */}
+      {/* Secret Passkey Modal */}
       <SecretAdminModal
         isOpen={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}

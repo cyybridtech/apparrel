@@ -12,6 +12,9 @@ export interface CartItem {
   qty: number;
   unitPriceCents: number;
   sku: string;
+  sellerId?: number;
+  sellerStore?: string;
+  sellerName?: string;
 }
 
 interface CartContextType {
@@ -39,7 +42,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = "apparrel_cart_v1";
+const CART_STORAGE_KEY = "cyybrid_cart_v2";
 const FREE_SHIPPING_THRESHOLD = 60000; // GHS 600.00
 const STANDARD_SHIPPING_FEE = 3500; // GHS 35.00
 
@@ -107,32 +110,48 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     setCart((prev) =>
-      prev.map((i) =>
-        i.productId === productId && i.sizeLabel === sizeLabel ? { ...i, qty } : i
+      prev.map((item) =>
+        item.productId === productId && item.sizeLabel === sizeLabel
+          ? { ...item, qty }
+          : item
       )
     );
   };
 
   const clearCart = () => {
     setCart([]);
-    setPromoCode("");
-    setDiscountPercent(0);
   };
+
+  const totalItemsCount = cart.reduce((total, item) => total + item.qty, 0);
+
+  const subtotalCents = cart.reduce(
+    (total, item) => total + item.unitPriceCents * item.qty,
+    0
+  );
+
+  const shippingCents =
+    subtotalCents >= FREE_SHIPPING_THRESHOLD || subtotalCents === 0
+      ? 0
+      : STANDARD_SHIPPING_FEE;
+
+  const discountCents = Math.round(subtotalCents * (discountPercent / 100));
+
+  const totalCents = Math.max(0, subtotalCents + shippingCents - discountCents);
 
   const applyPromoCode = (code: string): boolean => {
     const clean = code.trim().toUpperCase();
-    if (clean === "FIRST10" || clean === "WELCOME10") {
+    if (clean === "CYYBRID10" || clean === "VIP10") {
       setPromoCode(clean);
       setDiscountPercent(10);
-      success("Promo Applied!", "10% discount has been applied to your order.");
+      success("Promo Applied", "10% VIP Marketplace Discount Applied!");
       return true;
-    } else if (clean === "KICKS20" || clean === "VIP20") {
+    } else if (clean === "FOUNDER20") {
       setPromoCode(clean);
       setDiscountPercent(20);
-      success("VIP Discount!", "20% discount applied.");
+      success("Promo Applied", "20% Cyybrid Founder Discount Applied!");
       return true;
     } else {
-      error("Invalid Promo Code", "Please check and try again (Try: FIRST10 or VIP20)");
+      error("Invalid Code", "Please check your promo code and try again.");
       return false;
     }
   };
@@ -140,14 +159,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removePromoCode = () => {
     setPromoCode("");
     setDiscountPercent(0);
-    info("Promo Removed", "Discount code cleared.");
+    info("Promo Removed", "Marketplace promotion was cleared.");
   };
 
-  const totalItemsCount = cart.reduce((sum, item) => sum + item.qty, 0);
-  const subtotalCents = cart.reduce((sum, item) => sum + item.unitPriceCents * item.qty, 0);
-  const shippingCents = subtotalCents >= FREE_SHIPPING_THRESHOLD || subtotalCents === 0 ? 0 : STANDARD_SHIPPING_FEE;
-  const discountCents = Math.round((subtotalCents * discountPercent) / 100);
-  const totalCents = Math.max(0, subtotalCents + shippingCents - discountCents);
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
+
+  const openCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+  const closeCheckout = () => setIsCheckoutOpen(false);
 
   return (
     <CartContext.Provider
@@ -166,14 +188,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         applyPromoCode,
         removePromoCode,
         isCartOpen,
-        openCart: () => setIsCartOpen(true),
-        closeCart: () => setIsCartOpen(false),
+        openCart,
+        closeCart,
         isCheckoutOpen,
-        openCheckout: () => {
-          setIsCartOpen(false);
-          setIsCheckoutOpen(true);
-        },
-        closeCheckout: () => setIsCheckoutOpen(false),
+        openCheckout,
+        closeCheckout,
         freeShippingThresholdCents: FREE_SHIPPING_THRESHOLD,
       }}
     >
