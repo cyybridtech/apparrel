@@ -1300,11 +1300,16 @@ app.get("/api/admin/inventory-logs", requireAdminOrSeller, (req: Request, res: R
   res.json({ success: true, logs: sellerLogs });
 });
 
-// Boot
-app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(` 🚀 CYYBRID MULTI-SELLER MARKETPLACE ONLINE [PORT ${PORT}]`);
-  console.log(` 🔐 Unified Authentication (Admin / Seller / Customer)`);
-  console.log(` 📦 Structured Delivery Dispatch Management Ready`);
-  console.log(`======================================================\n`);
-});
+// Boot server when running in standalone Node.js environment
+if (process.env.VERCEL !== "1" && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(` 🚀 CYYBRID MULTI-SELLER MARKETPLACE ONLINE [PORT ${PORT}]`);
+    console.log(` 🔐 Unified Authentication (Admin / Seller / Customer)`);
+    console.log(` 📦 Structured Delivery Dispatch Management Ready`);
+    console.log(`======================================================\n`);
+  });
+}
+
+export { app };
+export default app;

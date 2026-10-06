@@ -66,13 +66,12 @@ const globalForDb = globalThis as typeof globalThis & {
   __kicksGhanaMysqlPool?: mysql.Pool;
 };
 
-const poolConfig = getPoolConfig();
+export const pool: mysql.Pool | null = databaseUrl
+  ? globalForDb.__kicksGhanaMysqlPool ?? mysql.createPool(getPoolConfig())
+  : null;
 
-export const pool =
-  globalForDb.__kicksGhanaMysqlPool ?? mysql.createPool(poolConfig);
-
-if (process.env.NODE_ENV !== "production") {
+if (pool && process.env.NODE_ENV !== "production") {
   globalForDb.__kicksGhanaMysqlPool = pool;
 }
 
-export const db = drizzle(pool);
+export const db = pool ? drizzle(pool) : null;
