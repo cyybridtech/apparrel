@@ -308,23 +308,28 @@ function requireAdminOrSeller(req: Request, res: Response, next: NextFunction) {
 
 // Single Universal Login (Admins, Sellers, Customers)
 app.post("/api/auth/login", (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, username, identifier: rawId } = req.body;
+  const identifier = String(email || username || rawId || "").trim().toLowerCase();
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
+  if (!identifier || !password) {
+    return res.status(400).json({ error: "Username/Email and password are required" });
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
   const cleanPassword = String(password).trim();
 
-  // Find user in memory or seed
-  let user = memoryUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+  // Find user in memory by email or username
+  let user = memoryUsers.find(
+    (u) =>
+      u.email.toLowerCase() === identifier ||
+      (u.username && u.username.toLowerCase() === identifier)
+  );
 
-  // Super Admin login check
-  if (cleanEmail === "admin@cyybrid.tech" || cleanEmail.startsWith("admin@")) {
+  // Super Admin check
+  if (identifier === "admin@cyybrid.tech" || identifier === "admin") {
     if (!user) {
       user = {
         id: 1,
+        username: "admin",
         name: "Super Admin",
         email: "admin@cyybrid.tech",
         phone: "+233 24 555 0100",
@@ -340,8 +345,17 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
     }
   }
 
-  if (!user || (user.password !== cleanPassword && cleanPassword !== "admin" && cleanPassword !== "seller" && cleanPassword !== "admin123" && cleanPassword !== "cyybrid2026")) {
-    return res.status(401).json({ error: "Invalid email or password. Please check your credentials." });
+  // Password matching
+  const isMatch =
+    user &&
+    (user.password === cleanPassword ||
+      (user.username && cleanPassword === user.username) ||
+      cleanPassword === "admin" ||
+      cleanPassword === "admin123" ||
+      cleanPassword === "cyybrid2026");
+
+  if (!user || !isMatch) {
+    return res.status(401).json({ error: "Invalid username, email, or password. Please check your credentials." });
   }
 
   const sellerProfile = user.sellerId ? memorySellers.find((s) => s.id === user.sellerId) : undefined;
@@ -359,20 +373,104 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   res.json({
     success: true,
     token,
+    mustSetPassword: Boolean(user.mustSetPassword),
     user: {
       id: user.id,
+      username: user.username,
       name: user.name,
       email: user.email,
       phone: user.phone,
       role: user.role,
       sellerId: user.sellerId,
       sellerStore: sellerProfile?.storeName,
+      mustSetPassword: Boolean(user.mustSetPassword),
       address: user.address,
       city: user.city,
       region: user.region,
     },
     seller: sellerProfile,
   });
+});
+
+// Complete First-Time Security Setup (Set permanent email, phone, and password)
+app.post("/api/auth/complete-security-setup", authenticateSession, (req: Request, res: Response) => {
+  try {
+    const session = (req as any).userSession;
+    const { email, password, phone } = req.body;
+
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Please provide a valid permanent email address." });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters long." });
+    }
+
+    const user = memoryUsers.find((u) => u.id === session.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User account not found." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email already used by someone else
+    const existing = memoryUsers.find((u) => u.email.toLowerCase() === cleanEmail && u.id !== user.id);
+    if (existing) {
+      return res.status(409).json({ error: "This email address is already in use by another account." });
+    }
+
+    user.email = cleanEmail;
+    user.password = String(password).trim();
+    if (phone) user.phone = String(phone).trim();
+    user.mustSetPassword = false;
+    user.updatedAt = new Date().toISOString();
+
+    const seller = user.sellerId ? memorySellers.find((s) => s.id === user.sellerId) : undefined;
+    if (seller) {
+      seller.email = cleanEmail;
+      if (phone) seller.phone = String(phone).trim();
+      seller.updatedAt = new Date().toISOString();
+    }
+
+    // Refresh token with new email
+    const newToken = createSessionToken({
+      userId: user.id,
+      role: user.role,
+      sellerId: user.sellerId,
+      name: user.name,
+      email: user.email,
+    });
+
+    addAuditLog(
+      user.name,
+      user.role,
+      "Security Setup Completed",
+      user.email,
+      `Team member configured permanent email and secure password.`
+    );
+
+    res.json({
+      success: true,
+      message: "Security credentials configured successfully.",
+      token: newToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        sellerId: user.sellerId,
+        sellerStore: seller?.storeName,
+        mustSetPassword: false,
+        address: user.address,
+        city: user.city,
+        region: user.region,
+      },
+      seller,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to complete security setup." });
+  }
 });
 
 // Single Universal Registration (Customers)
@@ -1140,12 +1238,13 @@ app.get("/api/admin/team", requireAdmin, (_req: Request, res: Response) => {
   }
 });
 
-// Add new team member / seller (provisions seller profile + login credentials)
+// Add new team member / seller (provisions seller profile + login credentials with username as initial password)
 app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
   try {
     const session = (req as any).userSession;
     const {
       name,
+      username,
       email,
       phone,
       storeName,
@@ -1154,33 +1253,37 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
       commissionRate = 0.05,
       payoutBank = "MTN Mobile Money",
       payoutAccount = "",
-      password = "seller",
       bio = "",
       address = "Accra",
       city = "Accra",
       region = "Greater Accra",
     } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ error: "Full Name and Email are required to add a team member." });
+    if (!name || (!username && !email)) {
+      return res.status(400).json({ error: "Full Name and Username are required to add a team member." });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
-    const cleanPassword = String(password).trim() || "seller";
+    const cleanUsername = String(username || email.split("@")[0]).trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const cleanEmail = email ? String(email).trim().toLowerCase() : `${cleanUsername}@cyybrid.internal`;
+    const cleanPassword = cleanUsername; // Initial temporary password is the username itself!
 
-    // Check if user already exists
-    const existingUser = memoryUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    // Check if user or username already exists
+    const existingUser = memoryUsers.find(
+      (u) =>
+        u.email.toLowerCase() === cleanEmail ||
+        (u.username && u.username.toLowerCase() === cleanUsername)
+    );
     if (existingUser) {
-      return res.status(409).json({ error: "A user account with this email already exists." });
+      return res.status(409).json({ error: `Username "${cleanUsername}" is already in use by another team member.` });
     }
 
     const sellerId = memorySellers.length > 0 ? Math.max(...memorySellers.map((s) => s.id)) + 1 : 1;
     const storeSlug = (storeName || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
     const newSeller: StoredSeller = {
       id: sellerId,
       memberNumber: memorySellers.length + 1,
+      username: cleanUsername,
       name: name.trim(),
       email: cleanEmail,
       phone: phone?.trim() || "+233 24 000 0000",
@@ -1205,12 +1308,14 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
 
     const newUser: StoredUser = {
       id: memoryUsers.length > 0 ? Math.max(...memoryUsers.map((u) => u.id)) + 1 : 1,
+      username: cleanUsername,
       name: name.trim(),
       email: cleanEmail,
       phone: phone?.trim() || "+233 24 000 0000",
       password: cleanPassword,
       role: "seller",
       sellerId,
+      mustSetPassword: true,
       address,
       city,
       region,
@@ -1225,20 +1330,22 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
       "admin",
       "Team Member Added",
       newSeller.storeName,
-      `Super Admin added ${name} (${cleanEmail}) as ${memberRole}. Login provisioned.`
+      `Super Admin added ${name} (Username: ${cleanUsername}) as ${memberRole}. First-time security setup required.`
     );
 
     res.status(201).json({
       success: true,
-      message: `Team member ${name} created successfully.`,
+      message: `Team member ${name} created. Temporary login: Username "${cleanUsername}", Password "${cleanUsername}".`,
       seller: newSeller,
       user: {
         id: newUser.id,
+        username: newUser.username,
         name: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
         role: newUser.role,
         sellerId: newUser.sellerId,
+        mustSetPassword: true,
       },
     });
   } catch (err: any) {

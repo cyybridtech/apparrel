@@ -1,11 +1,13 @@
 export interface InitialUser {
   id: number;
+  username?: string;
   name: string;
   email: string;
   phone: string;
   password: string; // Plaintext for demo seed / hashed on login
   role: "admin" | "seller" | "customer";
   sellerId?: number;
+  mustSetPassword?: boolean;
   address: string;
   city: string;
   region: string;
@@ -14,6 +16,7 @@ export interface InitialUser {
 export interface InitialSeller {
   id: number;
   memberNumber: number;
+  username?: string;
   name: string;
   email: string;
   phone: string;
@@ -60,6 +63,7 @@ export interface InitialProduct {
 export const INITIAL_USERS: InitialUser[] = [
   {
     id: 1,
+    username: "admin",
     name: "Cyybrid Platform Super Admin",
     email: "admin@cyybrid.tech",
     phone: "+233 24 555 0100",
@@ -71,108 +75,7 @@ export const INITIAL_USERS: InitialUser[] = [
   },
 ];
 
-export const INITIAL_SELLERS: InitialSeller[] = [
-  {
-    id: 1,
-    memberNumber: 1,
-    name: "Kwame Mensah",
-    email: "kwame.mensah@cyybrid.tech",
-    phone: "+233 24 412 9902",
-    storeName: "Kicks & Soles Hub",
-    storeSlug: "kicks-soles",
-    categorySpecialty: "Footwear & Sneakers",
-    memberRole: "Footwear Specialist",
-    paystackSubaccount: "ACCT_kwame_kicks_984",
-    commissionRate: 0.05,
-    payoutBank: "MTN Mobile Money",
-    payoutAccount: "0244129902",
-    balanceCents: 145000,
-    totalPaidCents: 420000,
-    status: "active",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
-    bio: "Curated retro basketball classics, lightweight performance trainers, and authentic streetwear kicks.",
-  },
-  {
-    id: 2,
-    memberNumber: 2,
-    name: "Ama Serwaa",
-    email: "ama.serwaa@cyybrid.tech",
-    phone: "+233 20 891 0023",
-    storeName: "Chrono & Heritage",
-    storeSlug: "chrono-heritage",
-    categorySpecialty: "Watches & Timepieces",
-    memberRole: "Horology Specialist",
-    paystackSubaccount: "ACCT_ama_chrono_112",
-    commissionRate: 0.05,
-    payoutBank: "GCB Bank",
-    payoutAccount: "1028394819",
-    balanceCents: 380000,
-    totalPaidCents: 850000,
-    status: "active",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop",
-    bio: "Precision mechanical automatic chronographs, sapphire crystal steel cases, and timeless horology.",
-  },
-  {
-    id: 3,
-    memberNumber: 3,
-    name: "Kofi Boateng",
-    email: "kofi.boateng@cyybrid.tech",
-    phone: "+233 55 771 8890",
-    storeName: "Cyybrid Atelier Wear",
-    storeSlug: "cyybrid-atelier",
-    categorySpecialty: "Streetwear & Apparel",
-    memberRole: "Fashion Director",
-    paystackSubaccount: "ACCT_kofi_apparel_305",
-    commissionRate: 0.05,
-    payoutBank: "Telecel Cash",
-    payoutAccount: "0557718890",
-    balanceCents: 210000,
-    totalPaidCents: 630000,
-    status: "active",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-    bio: "Heavyweight 290+ GSM combed organic cottons, architectural silhouettes, and minimal knitwear.",
-  },
-  {
-    id: 4,
-    memberNumber: 4,
-    name: "Esi Darko",
-    email: "esi.darko@cyybrid.tech",
-    phone: "+233 27 662 1099",
-    storeName: "Volt Audio & Gadgets",
-    storeSlug: "volt-audio",
-    categorySpecialty: "Electronics & Smart Tech",
-    memberRole: "Tech Lead",
-    paystackSubaccount: "ACCT_esi_tech_771",
-    commissionRate: 0.05,
-    payoutBank: "Ecobank Ghana",
-    payoutAccount: "14410009281",
-    balanceCents: 495000,
-    totalPaidCents: 1200000,
-    status: "active",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop",
-    bio: "Active noise-cancelling headphones, spatial audio wireless earbuds, and high-output MagCharge docks.",
-  },
-  {
-    id: 5,
-    memberNumber: 5,
-    name: "Yaw Osei",
-    email: "yaw.osei@cyybrid.tech",
-    phone: "+233 26 781 2903",
-    storeName: "Artisan Leather & Goods",
-    storeSlug: "artisan-leather",
-    categorySpecialty: "Bags, Leather & Fragrances",
-    memberRole: "Leather Craftsman",
-    paystackSubaccount: "ACCT_yaw_leather_554",
-    commissionRate: 0.05,
-    payoutBank: "AT Money",
-    payoutAccount: "0267812903",
-    balanceCents: 185000,
-    totalPaidCents: 390000,
-    status: "active",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-    bio: "Handcrafted full-grain leather travel bags, RFID protected wallets, and artisanal extraits de parfum.",
-  },
-];
+export const INITIAL_SELLERS: InitialSeller[] = [];
 
 export const INITIAL_CATEGORIES = [
   {

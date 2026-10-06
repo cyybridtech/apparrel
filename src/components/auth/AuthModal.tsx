@@ -105,16 +105,17 @@ export function AuthModal() {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Email Address <span className="text-rose-500">*</span>
+              {authModalMode === "login" ? "Username or Email Address" : "Email Address"}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
-                type="email"
+                type={authModalMode === "login" ? "text" : "email"}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
+                placeholder={authModalMode === "login" ? "username or your.email@example.com" : "your.email@example.com"}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-950 focus:bg-white"
               />
             </div>

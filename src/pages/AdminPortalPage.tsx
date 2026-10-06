@@ -63,6 +63,7 @@ import {
   addAdminTeamMember,
   updateAdminTeamMember,
   deleteAdminTeamMember,
+  completeSecuritySetup,
   authLogin,
   Product,
   Order,
@@ -100,11 +101,20 @@ export function AdminPortalPage() {
     return (localStorage.getItem("cyybrid_role") as any) || "admin";
   });
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState("admin@cyybrid.tech");
+  // Login form state (Accepts Username or Email)
+  const [loginEmail, setLoginEmail] = useState("admin");
   const [loginPass, setLoginPass] = useState("admin");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+
+  // First-time Security Setup state for Sellers
+  const [secEmail, setSecEmail] = useState("");
+  const [secPhone, setSecPhone] = useState("");
+  const [secPassword, setSecPassword] = useState("");
+  const [secConfirmPassword, setSecConfirmPassword] = useState("");
+  const [secError, setSecError] = useState("");
+  const [secLoading, setSecLoading] = useState(false);
+  const [showSecPassword, setShowSecPassword] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "team" | "restock" | "products" | "orders" | "audit"
@@ -133,11 +143,11 @@ export function AdminPortalPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Team Member Modal (Add / Edit)
+  // Team Member Modal (Add / Edit) - Admin sets Name & Username
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
   const [teamFormName, setTeamFormName] = useState("");
-  const [teamFormEmail, setTeamFormEmail] = useState("");
+  const [teamFormUsername, setTeamFormUsername] = useState("");
   const [teamFormPhone, setTeamFormPhone] = useState("");
   const [teamFormStore, setTeamFormStore] = useState("");
   const [teamFormCategory, setTeamFormCategory] = useState("Footwear & Sneakers");
@@ -145,7 +155,6 @@ export function AdminPortalPage() {
   const [teamFormCommission, setTeamFormCommission] = useState(5);
   const [teamFormBank, setTeamFormBank] = useState("MTN Mobile Money");
   const [teamFormAccount, setTeamFormAccount] = useState("");
-  const [teamFormPassword, setTeamFormPassword] = useState("seller");
   const [teamLoading, setTeamLoading] = useState(false);
 
   // Payout Modal
@@ -265,19 +274,18 @@ export function AdminPortalPage() {
     if (memberToEdit) {
       setEditingTeamMember(memberToEdit);
       setTeamFormName(memberToEdit.name);
-      setTeamFormEmail(memberToEdit.email);
-      setTeamFormPhone(memberToEdit.phone);
+      setTeamFormUsername(memberToEdit.username || memberToEdit.name.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+      setTeamFormPhone(memberToEdit.phone || "");
       setTeamFormStore(memberToEdit.storeName);
       setTeamFormCategory(memberToEdit.categorySpecialty);
       setTeamFormRole(memberToEdit.memberRole);
       setTeamFormCommission(Math.round((memberToEdit.commissionRate || 0.05) * 100));
       setTeamFormBank(memberToEdit.payoutBank || "MTN Mobile Money");
       setTeamFormAccount(memberToEdit.payoutAccount || "");
-      setTeamFormPassword("");
     } else {
       setEditingTeamMember(null);
       setTeamFormName("");
-      setTeamFormEmail("");
+      setTeamFormUsername("");
       setTeamFormPhone("");
       setTeamFormStore("");
       setTeamFormCategory("Footwear & Sneakers");
@@ -285,15 +293,15 @@ export function AdminPortalPage() {
       setTeamFormCommission(5);
       setTeamFormBank("MTN Mobile Money");
       setTeamFormAccount("");
-      setTeamFormPassword("seller");
     }
     setIsTeamModalOpen(true);
   };
 
   const handleSaveTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamFormName.trim() || !teamFormEmail.trim()) {
-      error("Missing Fields", "Name and Email are required.");
+    const cleanUsername = teamFormUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (!teamFormName.trim() || !cleanUsername) {
+      error("Missing Required Fields", "Please provide both Full Name and Username.");
       return;
     }
 
@@ -301,15 +309,16 @@ export function AdminPortalPage() {
     try {
       const payload = {
         name: teamFormName.trim(),
-        email: teamFormEmail.trim().toLowerCase(),
+        username: cleanUsername,
+        email: `${cleanUsername}@cyybrid.internal`,
         phone: teamFormPhone.trim() || "+233 24 000 0000",
         storeName: teamFormStore.trim() || `${teamFormName.trim()}'s Boutique`,
         categorySpecialty: teamFormCategory,
         memberRole: teamFormRole,
         commissionRate: teamFormCommission / 100,
         payoutBank: teamFormBank,
-        payoutAccount: teamFormAccount || teamFormPhone || "0240000000",
-        password: teamFormPassword || "seller",
+        payoutAccount: teamFormAccount.trim() || "0240000000",
+        password: cleanUsername,
       };
 
       if (editingTeamMember) {
@@ -322,7 +331,10 @@ export function AdminPortalPage() {
       } else {
         const res = await addAdminTeamMember(payload);
         if (res.success) {
-          success("Team Member Added", `${teamFormName} has been granted seller access.`);
+          success(
+            "Team Member Added",
+            `${teamFormName} provisioned with temporary login: Username "${cleanUsername}", Password "${cleanUsername}".`
+          );
           setIsTeamModalOpen(false);
           loadPortalData();
         }
@@ -363,9 +375,46 @@ export function AdminPortalPage() {
   };
 
   const copyCredentials = (member: TeamMember) => {
-    const text = `CYYBRID SELLER LOGIN\nPortal: /admin\nEmail: ${member.email}\nPassword: seller\nStore: ${member.storeName}`;
+    const un = member.username || member.name.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    const text = `CYYBRID SELLER ONBOARDING CREDENTIALS\nPortal: /admin\nUsername: ${un}\nTemporary Password: ${un}\nStore: ${member.storeName}\n\nNote: On first login, you will be prompted to set your personal email and private password.`;
     navigator.clipboard.writeText(text);
-    success("Copied to Clipboard", `Login credentials for ${member.name} copied.`);
+    success("Copied to Clipboard", `Login credentials for ${member.name} (@${un}) copied.`);
+  };
+
+  const handleCompleteSecuritySetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecError("");
+
+    if (!secEmail || !secEmail.includes("@")) {
+      setSecError("Please enter a valid official email address.");
+      return;
+    }
+    if (!secPassword || secPassword.length < 6) {
+      setSecError("New secure password must be at least 6 characters long.");
+      return;
+    }
+    if (secPassword !== secConfirmPassword) {
+      setSecError("Passwords do not match. Please re-enter carefully.");
+      return;
+    }
+
+    setSecLoading(true);
+    try {
+      const res = await completeSecuritySetup({
+        email: secEmail.trim(),
+        phone: secPhone.trim(),
+        password: secPassword,
+      });
+
+      if (res.success && res.user) {
+        setCurrentUser({ ...res.user, mustSetPassword: false });
+        success("Security Configured", `Your credentials have been secured, ${res.user.name}.`);
+      }
+    } catch (err: any) {
+      setSecError(err.message || "Failed to update security credentials.");
+    } finally {
+      setSecLoading(false);
+    }
   };
 
   // ─── Inventory & Delivery Handlers ──────────────────────────────
@@ -558,15 +607,15 @@ export function AdminPortalPage() {
             className="space-y-4 pt-2"
           >
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Account Email</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Username or Email</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="admin@cyybrid.tech"
+                  placeholder="admin or your username"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
                 />
               </div>
@@ -608,6 +657,133 @@ export function AdminPortalPage() {
               ← Return to Storefront
             </Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── FIRST-TIME SECURITY SETUP SCREEN (FOR ONBOARDING TEAM MEMBERS) ───
+  if (currentUser && currentUser.mustSetPassword) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-8 sm:p-10 space-y-6 relative z-10 animate-fadeIn">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-black font-heading text-slate-950">
+              Account Security Activation
+            </h2>
+            <p className="text-xs text-slate-600">
+              Welcome to Cyybrid Marketplace, <strong className="text-slate-900">{currentUser.name}</strong>! Please configure your official contact email and choose a secure permanent password to activate your seller portal.
+            </p>
+          </div>
+
+          <form onSubmit={handleCompleteSecuritySetup} className="space-y-4 text-xs pt-2">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Official Email Address <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  value={secEmail}
+                  onChange={(e) => setSecEmail(e.target.value)}
+                  placeholder="e.g. kwame.mensah@gmail.com"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                />
+              </div>
+              <span className="text-[11px] text-slate-400 mt-1 block">
+                This email will be used for all order notifications and future logins.
+              </span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Contact Phone Number <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="tel"
+                  required
+                  value={secPhone}
+                  onChange={(e) => setSecPhone(e.target.value)}
+                  placeholder="+233 24 000 0000"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                New Permanent Password <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showSecPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={secPassword}
+                  onChange={(e) => setSecPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 pr-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecPassword(!showSecPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Confirm New Password <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showSecPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={secConfirmPassword}
+                  onChange={(e) => setSecConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                />
+              </div>
+            </div>
+
+            {secError && (
+              <p className="text-xs text-rose-600 font-medium flex items-center gap-1.5 p-3 rounded-xl bg-rose-50 border border-rose-200">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{secError}</span>
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={secLoading}
+              className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 text-xs font-bold shadow-lg"
+            >
+              {secLoading ? "Activating Account..." : "Save Credentials & Open Dashboard"}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full text-center text-xs text-slate-500 hover:text-slate-900 pt-2 font-medium"
+            >
+              Cancel & Sign Out
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -978,10 +1154,21 @@ export function AdminPortalPage() {
                           <h3 className="font-heading font-black text-sm text-slate-950 truncate">
                             {member.name}
                           </h3>
-                          <div className="text-xs text-slate-600 font-semibold truncate">
+                          <div className="text-xs text-slate-700 font-bold font-mono truncate">
+                            @{member.username || member.email.split("@")[0]}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-semibold truncate">
                             {member.storeName}
                           </div>
-                          <div className="text-[11px] text-slate-400 truncate">{member.email}</div>
+                          {member.mustSetPassword ? (
+                            <span className="inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                              First-Time Setup Pending
+                            </span>
+                          ) : (
+                            <span className="inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                              Active & Configured
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1359,41 +1546,51 @@ export function AdminPortalPage() {
             <form onSubmit={handleSaveTeamMember} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Full Legal Name</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Full Legal Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={teamFormName}
-                    onChange={(e) => setTeamFormName(e.target.value)}
+                    onChange={(e) => {
+                      setTeamFormName(e.target.value);
+                      if (!editingTeamMember && !teamFormUsername) {
+                        setTeamFormUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""));
+                      }
+                      if (!editingTeamMember && !teamFormStore) {
+                        setTeamFormStore(`${e.target.value.trim()}'s Store`);
+                      }
+                    }}
                     placeholder="e.g. Kwame Mensah"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Email Address (Login)</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Assigned Username <span className="text-rose-500">*</span>
+                  </label>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={teamFormEmail}
-                    onChange={(e) => setTeamFormEmail(e.target.value)}
-                    placeholder="kwame.mensah@cyybrid.tech"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                    value={teamFormUsername}
+                    onChange={(e) => setTeamFormUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                    placeholder="e.g. kwame"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-slate-950"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Security onboarding note */}
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-[11px] text-emerald-900">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    required
-                    value={teamFormPhone}
-                    onChange={(e) => setTeamFormPhone(e.target.value)}
-                    placeholder="+233 24 412 9902"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
-                  />
+                  <strong className="block font-bold text-emerald-950">High-Security First-Time Setup</strong>
+                  Seller logs in with Username: <code className="font-mono font-bold bg-emerald-100 px-1 rounded">{teamFormUsername || "username"}</code> and Password: <code className="font-mono font-bold bg-emerald-100 px-1 rounded">{teamFormUsername || "username"}</code>. Upon login, they will be prompted to set their private email & secure password.
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Store / Brand Name</label>
                   <input
@@ -1402,6 +1599,16 @@ export function AdminPortalPage() {
                     value={teamFormStore}
                     onChange={(e) => setTeamFormStore(e.target.value)}
                     placeholder="e.g. Kicks & Soles Hub"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Contact Phone (Optional)</label>
+                  <input
+                    type="tel"
+                    value={teamFormPhone}
+                    onChange={(e) => setTeamFormPhone(e.target.value)}
+                    placeholder="+233 24 000 0000"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
                   />
                 </div>
@@ -1449,21 +1656,6 @@ export function AdminPortalPage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    {editingTeamMember ? "Change Password (optional)" : "Initial Password"}
-                  </label>
-                  <input
-                    type="text"
-                    value={teamFormPassword}
-                    onChange={(e) => setTeamFormPassword(e.target.value)}
-                    placeholder={editingTeamMember ? "Leave blank to keep" : "seller"}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-950"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
                   <label className="block font-bold text-slate-700 mb-1">Payout Method / Bank</label>
                   <select
                     value={teamFormBank}
@@ -1478,16 +1670,17 @@ export function AdminPortalPage() {
                     <option value="Stanbic Bank Ghana">Stanbic Bank Ghana</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Payout Account / MoMo No.</label>
-                  <input
-                    type="text"
-                    value={teamFormAccount}
-                    onChange={(e) => setTeamFormAccount(e.target.value)}
-                    placeholder="0244129902"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-950"
-                  />
-                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Payout Account / MoMo No.</label>
+                <input
+                  type="text"
+                  value={teamFormAccount}
+                  onChange={(e) => setTeamFormAccount(e.target.value)}
+                  placeholder="0244129902"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-950"
+                />
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">

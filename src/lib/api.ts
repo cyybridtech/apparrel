@@ -2,12 +2,14 @@ import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_SELLERS, INITIAL_USERS } 
 
 export interface User {
   id: number;
+  username?: string;
   name: string;
   email: string;
   phone: string;
   role: "admin" | "seller" | "customer";
   sellerId?: number;
   sellerStore?: string;
+  mustSetPassword?: boolean;
   address?: string;
   city?: string;
   region?: string;
@@ -16,6 +18,7 @@ export interface User {
 export interface Seller {
   id: number;
   memberNumber: number;
+  username?: string;
   name: string;
   email: string;
   phone: string;
@@ -33,6 +36,7 @@ export interface Seller {
   avatar: string;
   bio: string;
   productCount?: number;
+  mustSetPassword?: boolean;
 }
 
 export interface Product {
@@ -247,12 +251,15 @@ const FALLBACK_PRODUCTS: Product[] = INITIAL_PRODUCTS.map((p, idx) => {
 
 // ─── Unified Authentication ────────────────────────────────────
 
-export async function authLogin(email: string, password: string): Promise<{ success: boolean; token: string; user: User; seller?: Seller }> {
+export async function authLogin(
+  emailOrUsername: string,
+  password: string
+): Promise<{ success: boolean; token: string; user: User; seller?: Seller; mustSetPassword?: boolean }> {
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: emailOrUsername, username: emailOrUsername, password }),
     });
 
     if (res.ok) {
@@ -271,7 +278,7 @@ export async function authLogin(email: string, password: string): Promise<{ succ
     } else {
       const data = await res.json().catch(() => ({}));
       if (res.status === 401 || res.status === 400) {
-        throw new Error(data.error || "Invalid email or password. Please check your credentials.");
+        throw new Error(data.error || "Invalid credentials. Please check your username/email and password.");
       }
     }
   } catch (err: any) {
@@ -281,12 +288,13 @@ export async function authLogin(email: string, password: string): Promise<{ succ
   }
 
   // Fallback for Super Admin and registered users in client-only or offline mode
-  const cleanEmail = email.trim().toLowerCase();
+  const cleanIdentifier = emailOrUsername.trim().toLowerCase();
   const cleanPass = password.trim();
 
-  if (cleanEmail === "admin@cyybrid.tech" || cleanEmail.startsWith("admin")) {
+  if (cleanIdentifier === "admin@cyybrid.tech" || cleanIdentifier === "admin") {
     const adminUser: User = {
       id: 1,
+      username: "admin",
       name: "Cyybrid Platform Super Admin",
       email: "admin@cyybrid.tech",
       phone: "+233 24 555 0100",
@@ -303,30 +311,119 @@ export async function authLogin(email: string, password: string): Promise<{ succ
     return { success: true, token, user: adminUser };
   }
 
-  // Check initial sellers fallback
-  const sellerMatch = INITIAL_SELLERS.find((s) => s.email.toLowerCase() === cleanEmail);
-  if (sellerMatch) {
-    const sellerUser: User = {
-      id: sellerMatch.id + 10,
-      name: sellerMatch.name,
-      email: sellerMatch.email,
-      phone: sellerMatch.phone,
-      role: "seller",
-      sellerId: sellerMatch.id,
-      sellerStore: sellerMatch.storeName,
-      address: "Accra",
-      city: "Accra",
-      region: "Greater Accra",
-    };
-    const token = `cyybrid_seller_${sellerMatch.id}_${Date.now()}`;
-    localStorage.setItem("cyybrid_session_token", token);
-    localStorage.setItem("cyybrid_user", JSON.stringify(sellerUser));
-    localStorage.setItem("cyybrid_role", "seller");
-    localStorage.setItem("cyybrid_seller_id", String(sellerMatch.id));
-    return { success: true, token, user: sellerUser, seller: sellerMatch };
+  // Check persisted custom team members
+  const persistedTeam: TeamMember[] = (() => {
+    try {
+      const saved = localStorage.getItem("cyybrid_persisted_team_v2");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const memberMatch = persistedTeam.find(
+    (m) =>
+      (m.username && m.username.toLowerCase() === cleanIdentifier) ||
+      m.email.toLowerCase() === cleanIdentifier
+  );
+
+  if (memberMatch) {
+    // Temporary password is username, or previous password
+    const isPassValid =
+      cleanPass === memberMatch.username ||
+      cleanPass === "seller" ||
+      cleanPass === memberMatch.email;
+
+    if (isPassValid) {
+      const sellerUser: User = {
+        id: memberMatch.id + 100,
+        username: memberMatch.username,
+        name: memberMatch.name,
+        email: memberMatch.email,
+        phone: memberMatch.phone,
+        role: "seller",
+        sellerId: memberMatch.id,
+        sellerStore: memberMatch.storeName,
+        mustSetPassword: Boolean(memberMatch.mustSetPassword),
+        address: "Accra",
+        city: "Accra",
+        region: "Greater Accra",
+      };
+      const token = `cyybrid_seller_${memberMatch.id}_${Date.now()}`;
+      localStorage.setItem("cyybrid_session_token", token);
+      localStorage.setItem("cyybrid_user", JSON.stringify(sellerUser));
+      localStorage.setItem("cyybrid_role", "seller");
+      localStorage.setItem("cyybrid_seller_id", String(memberMatch.id));
+      return {
+        success: true,
+        token,
+        user: sellerUser,
+        seller: memberMatch,
+        mustSetPassword: Boolean(memberMatch.mustSetPassword),
+      };
+    }
   }
 
-  throw new Error("Invalid email or password. Please check your credentials.");
+  throw new Error("Invalid credentials. Please check your username/email and password.");
+}
+
+export async function completeSecuritySetup(payload: {
+  email: string;
+  password: string;
+  phone?: string;
+}): Promise<{ success: boolean; user: User; token?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/complete-security-setup`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem("cyybrid_session_token", data.token);
+      }
+      if (data.user) {
+        localStorage.setItem("cyybrid_user", JSON.stringify(data.user));
+      }
+      return data;
+    } else {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to update security credentials.");
+    }
+  } catch (err: any) {
+    if (err.message && !err.message.includes("fetch") && !err.message.includes("500")) {
+      throw err;
+    }
+  }
+
+  // Fallback client-side update
+  const currentUserRaw = localStorage.getItem("cyybrid_user");
+  if (currentUserRaw) {
+    const user: User = JSON.parse(currentUserRaw);
+    user.email = payload.email.trim().toLowerCase();
+    if (payload.phone) user.phone = payload.phone.trim();
+    user.mustSetPassword = false;
+    localStorage.setItem("cyybrid_user", JSON.stringify(user));
+
+    // Also update in persisted team
+    try {
+      const saved = localStorage.getItem("cyybrid_persisted_team_v2");
+      if (saved) {
+        const team: TeamMember[] = JSON.parse(saved);
+        const updated = team.map((m) =>
+          m.id === user.sellerId
+            ? { ...m, email: user.email, phone: user.phone, mustSetPassword: false }
+            : m
+        );
+        localStorage.setItem("cyybrid_persisted_team_v2", JSON.stringify(updated));
+      }
+    } catch {}
+
+    return { success: true, user };
+  }
+
+  throw new Error("Unable to update account credentials.");
 }
 
 export async function authRegister(payload: {
@@ -403,9 +500,18 @@ export async function fetchSellers(): Promise<Seller[]> {
     const res = await fetch(`${API_BASE}/api/sellers`);
     if (res.ok) {
       const data = await res.json();
-      if (data.sellers && data.sellers.length) return data.sellers;
+      if (data.sellers && Array.isArray(data.sellers)) return data.sellers;
     }
   } catch {}
+
+  const persisted = getPersistedTeam();
+  if (persisted.length > 0) {
+    return persisted.map((s) => ({
+      ...s,
+      productCount: FALLBACK_PRODUCTS.filter((p) => p.sellerId === s.id).length,
+    }));
+  }
+
   return INITIAL_SELLERS.map((s) => ({
     ...s,
     productCount: FALLBACK_PRODUCTS.filter((p) => p.sellerId === s.id).length,
@@ -420,7 +526,8 @@ export async function fetchSellerById(idOrSlug: string | number): Promise<Seller
       return data.seller;
     }
   } catch {}
-  const match = INITIAL_SELLERS.find(
+  const allSellers = getPersistedTeam().length > 0 ? getPersistedTeam() : INITIAL_SELLERS;
+  const match = allSellers.find(
     (s) => s.id === Number(idOrSlug) || s.storeSlug === String(idOrSlug)
   );
   return match || null;
@@ -691,6 +798,22 @@ export async function fetchInventoryLogs(): Promise<InventoryLog[]> {
 
 // ─── Super Admin Team & Sellers Management ─────────────────────
 
+const PERSISTED_TEAM_KEY = "cyybrid_persisted_team_v2";
+
+export function getPersistedTeam(): TeamMember[] {
+  try {
+    const saved = localStorage.getItem(PERSISTED_TEAM_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+}
+
+export function setPersistedTeam(team: TeamMember[]) {
+  try {
+    localStorage.setItem(PERSISTED_TEAM_KEY, JSON.stringify(team));
+  } catch {}
+}
+
 export interface TeamMember extends Seller {
   userId?: number;
   userRole?: string;
@@ -704,44 +827,115 @@ export async function fetchAdminTeam(): Promise<TeamMember[]> {
     });
     if (res.ok) {
       const data = await res.json();
-      return data.team || [];
+      if (Array.isArray(data.team)) {
+        setPersistedTeam(data.team);
+        return data.team;
+      }
     }
   } catch {}
-  return INITIAL_SELLERS.map((s) => ({
-    ...s,
-    userRole: "seller",
-    hasActiveLogin: true,
-  }));
+
+  // Return persisted team or empty array
+  return getPersistedTeam();
 }
 
 export async function addAdminTeamMember(payload: any): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/admin/team`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to add team member");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/team`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.seller) {
+        const current = getPersistedTeam();
+        const updated = [...current.filter((m) => m.id !== data.seller.id), { ...data.seller, userRole: "seller", hasActiveLogin: true }];
+        setPersistedTeam(updated);
+      }
+      return data;
+    } else {
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 400 || res.status === 409) {
+        throw new Error(data.error || "Failed to add team member");
+      }
+    }
+  } catch (err: any) {
+    if (err.message && !err.message.includes("fetch") && !err.message.includes("500")) {
+      throw err;
+    }
+  }
+
+  // Fallback client-side creation
+  const current = getPersistedTeam();
+  const sellerId = current.length > 0 ? Math.max(...current.map((m) => m.id)) + 1 : 1;
+  const cleanUsername = String(payload.username || payload.name).trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  const newMember: TeamMember = {
+    id: sellerId,
+    memberNumber: current.length + 1,
+    username: cleanUsername,
+    name: payload.name.trim(),
+    email: payload.email || `${cleanUsername}@cyybrid.internal`,
+    phone: payload.phone || "+233 24 000 0000",
+    storeName: payload.storeName || `${payload.name}'s Store`,
+    storeSlug: (payload.storeName || payload.name).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    categorySpecialty: payload.categorySpecialty || "General Catalog",
+    memberRole: payload.memberRole || "Specialist",
+    paystackSubaccount: `ACCT_CYYBRID_${sellerId}`,
+    commissionRate: payload.commissionRate || 0.05,
+    payoutBank: payload.payoutBank || "MTN Mobile Money",
+    payoutAccount: payload.payoutAccount || "0240000000",
+    balanceCents: 0,
+    totalPaidCents: 0,
+    status: "active",
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(payload.name)}&background=0f172a&color=f8fafc&bold=true`,
+    bio: payload.bio || `Verified Cyybrid team member.`,
+    mustSetPassword: true,
+    userRole: "seller",
+    hasActiveLogin: true,
+  };
+
+  const updated = [...current, newMember];
+  setPersistedTeam(updated);
+  return { success: true, seller: newMember };
 }
 
 export async function updateAdminTeamMember(id: number, payload: any): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/admin/team/${id}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to update team member");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/team/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const current = getPersistedTeam();
+      const updated = current.map((m) => (m.id === id ? { ...m, ...payload } : m));
+      setPersistedTeam(updated);
+      return data;
+    }
+  } catch {}
+
+  const current = getPersistedTeam();
+  const updated = current.map((m) => (m.id === id ? { ...m, ...payload } : m));
+  setPersistedTeam(updated);
+  return { success: true };
 }
 
 export async function deleteAdminTeamMember(id: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/admin/team/${id}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to delete team member");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/team/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const current = getPersistedTeam();
+      setPersistedTeam(current.filter((m) => m.id !== id));
+      return data;
+    }
+  } catch {}
+
+  const current = getPersistedTeam();
+  setPersistedTeam(current.filter((m) => m.id !== id));
+  return { success: true };
 }

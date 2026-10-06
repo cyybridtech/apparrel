@@ -242,11 +242,11 @@ export function AccountPage() {
               Default Delivery Address
             </span>
             <span className="text-sm font-bold text-white mt-1 block truncate">
-              {user.addresses.find((a) => a.isDefault)?.street || user.address || "Not set yet"}
+              {(user.addresses || []).find((a) => a.isDefault)?.street || user.address || "Not set yet"}
             </span>
             <span className="text-[11px] text-slate-400">
-              {user.addresses.find((a) => a.isDefault)?.city || user.city || "Accra"},{" "}
-              {user.addresses.find((a) => a.isDefault)?.region || user.region || "Greater Accra"}
+              {(user.addresses || []).find((a) => a.isDefault)?.city || user.city || "Accra"},{" "}
+              {(user.addresses || []).find((a) => a.isDefault)?.region || user.region || "Greater Accra"}
             </span>
           </div>
 
@@ -284,7 +284,7 @@ export function AccountPage() {
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         {[
           { id: "orders", label: `Order History (${orders.length})`, icon: Package },
-          { id: "addresses", label: `Saved Addresses (${user.addresses.length})`, icon: MapPin },
+          { id: "addresses", label: `Saved Addresses (${(user.addresses || []).length})`, icon: MapPin },
           { id: "profile", label: "Profile & Settings", icon: User },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -431,7 +431,7 @@ export function AccountPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user.addresses.map((addr) => (
+            {(user.addresses || []).map((addr) => (
               <div
                 key={addr.id}
                 className={`p-6 rounded-3xl border transition-all ${
