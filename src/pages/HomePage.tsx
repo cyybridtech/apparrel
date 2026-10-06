@@ -167,61 +167,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 5 Founding Member Stores Showcase */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-8">
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-              <Store className="w-4 h-4 text-emerald-500" />
-              <span>Founding Vendor Guild</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black font-heading text-slate-950 mt-1">
-              Shop by Cyybrid Founding Stores
-            </h2>
-          </div>
-          <Link
-            to="/shop"
-            className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1 self-start sm:self-auto"
-          >
-            <span>View All Marketplace Stores</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {sellers.map((s) => (
-            <Link
-              key={s.id}
-              to={`/shop?seller=${s.id}`}
-              className="group p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <img
-                  src={s.avatar}
-                  alt={s.name}
-                  className="w-14 h-14 rounded-2xl object-cover border border-slate-200 group-hover:scale-105 transition-transform"
-                />
-                <div>
-                  <div className="text-[10px] font-mono font-bold uppercase text-slate-400">
-                    Store #{s.memberNumber}
-                  </div>
-                  <h3 className="font-heading font-bold text-sm text-slate-950 group-hover:text-emerald-700 transition-colors">
-                    {s.storeName}
-                  </h3>
-                  <div className="text-xs font-medium text-slate-500 mt-0.5">{s.name}</div>
-                </div>
-                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{s.bio}</p>
-              </div>
-
-              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900">
-                <span>{s.categorySpecialty}</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       {/* Featured Drops Carousel / Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
