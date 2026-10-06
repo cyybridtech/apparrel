@@ -1,3 +1,16 @@
+export interface InitialUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  password: string; // Plaintext for demo seed / hashed on login
+  role: "admin" | "seller" | "customer";
+  sellerId?: number;
+  address: string;
+  city: string;
+  region: string;
+}
+
 export interface InitialSeller {
   id: number;
   memberNumber: number;
@@ -15,7 +28,6 @@ export interface InitialSeller {
   balanceCents: number;
   totalPaidCents: number;
   status: "active" | "suspended" | "pending";
-  passcode: string;
   avatar: string;
   bio: string;
 }
@@ -45,6 +57,91 @@ export interface InitialProduct {
   sizes: { label: string; stock: number }[];
 }
 
+export const INITIAL_USERS: InitialUser[] = [
+  {
+    id: 1,
+    name: "Cyybrid Platform Executive",
+    email: "admin@cyybrid.tech",
+    phone: "+233 24 555 0100",
+    password: "admin",
+    role: "admin",
+    address: "14 Independence Avenue, Airport Residential",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 2,
+    name: "Kwame Mensah",
+    email: "kwame.mensah@cyybrid.tech",
+    phone: "+233 24 412 9902",
+    password: "seller",
+    role: "seller",
+    sellerId: 1,
+    address: "12 Spintex Road",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 3,
+    name: "Ama Serwaa",
+    email: "ama.serwaa@cyybrid.tech",
+    phone: "+233 20 891 0023",
+    password: "seller",
+    role: "seller",
+    sellerId: 2,
+    address: "28 Boundary Road, East Legon",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 4,
+    name: "Kofi Boateng",
+    email: "kofi.boateng@cyybrid.tech",
+    phone: "+233 55 771 8890",
+    password: "seller",
+    role: "seller",
+    sellerId: 3,
+    address: "8 Senatorial Loop, Cantonments",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 5,
+    name: "Esi Darko",
+    email: "esi.darko@cyybrid.tech",
+    phone: "+233 27 662 1099",
+    password: "seller",
+    role: "seller",
+    sellerId: 4,
+    address: "19 Ring Road Central",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 6,
+    name: "Yaw Osei",
+    email: "yaw.osei@cyybrid.tech",
+    phone: "+233 26 781 2903",
+    password: "seller",
+    role: "seller",
+    sellerId: 5,
+    address: "55 Liberation Road",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+  {
+    id: 7,
+    name: "Kofi Mensah",
+    email: "kofi.mensah@example.com",
+    phone: "+233 24 412 9902",
+    password: "password",
+    role: "customer",
+    address: "14 Independence Avenue, Airport Residential",
+    city: "Accra",
+    region: "Greater Accra",
+  },
+];
+
 export const INITIAL_SELLERS: InitialSeller[] = [
   {
     id: 1,
@@ -55,7 +152,7 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     storeName: "Kicks & Soles Hub",
     storeSlug: "kicks-soles",
     categorySpecialty: "Footwear & Sneakers",
-    memberRole: "Team Member 1 / Footwear Specialist",
+    memberRole: "Footwear Specialist",
     paystackSubaccount: "ACCT_kwame_kicks_984",
     commissionRate: 0.05,
     payoutBank: "MTN Mobile Money",
@@ -63,9 +160,8 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     balanceCents: 145000,
     totalPaidCents: 420000,
     status: "active",
-    passcode: "1111",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
-    bio: "Curating the rarest retro basketball silhouettes, lightweight performance trainers, and authentic streetwear kicks across West Africa.",
+    bio: "Curated retro basketball classics, lightweight performance trainers, and authentic streetwear kicks.",
   },
   {
     id: 2,
@@ -76,7 +172,7 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     storeName: "Chrono & Heritage",
     storeSlug: "chrono-heritage",
     categorySpecialty: "Watches & Timepieces",
-    memberRole: "Team Member 2 / Horology Lead",
+    memberRole: "Horology Specialist",
     paystackSubaccount: "ACCT_ama_chrono_112",
     commissionRate: 0.05,
     payoutBank: "GCB Bank",
@@ -84,9 +180,8 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     balanceCents: 380000,
     totalPaidCents: 850000,
     status: "active",
-    passcode: "2222",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop",
-    bio: "Precision mechanical automatic chronographs, sapphire crystal steel cases, and timeless horology for the discerning executive.",
+    bio: "Precision mechanical automatic chronographs, sapphire crystal steel cases, and timeless horology.",
   },
   {
     id: 3,
@@ -97,7 +192,7 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     storeName: "Cyybrid Atelier Wear",
     storeSlug: "cyybrid-atelier",
     categorySpecialty: "Streetwear & Apparel",
-    memberRole: "Team Member 3 / Fashion Director",
+    memberRole: "Fashion Director",
     paystackSubaccount: "ACCT_kofi_apparel_305",
     commissionRate: 0.05,
     payoutBank: "Telecel Cash",
@@ -105,9 +200,8 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     balanceCents: 210000,
     totalPaidCents: 630000,
     status: "active",
-    passcode: "3333",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-    bio: "Heavyweight 290+ GSM combed organic cottons, architectural silhouettes, relaxed drape tailoring, and minimal statement knitwear.",
+    bio: "Heavyweight 290+ GSM combed organic cottons, architectural silhouettes, and minimal knitwear.",
   },
   {
     id: 4,
@@ -118,7 +212,7 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     storeName: "Volt Audio & Gadgets",
     storeSlug: "volt-audio",
     categorySpecialty: "Electronics & Smart Tech",
-    memberRole: "Team Member 4 / Tech Lead",
+    memberRole: "Tech Lead",
     paystackSubaccount: "ACCT_esi_tech_771",
     commissionRate: 0.05,
     payoutBank: "Ecobank Ghana",
@@ -126,9 +220,8 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     balanceCents: 495000,
     totalPaidCents: 1200000,
     status: "active",
-    passcode: "4444",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop",
-    bio: "Premium active noise-cancelling headphones, spatial audio wireless earbuds, high-output MagCharge stations, and audiophile gear.",
+    bio: "Active noise-cancelling headphones, spatial audio wireless earbuds, and high-output MagCharge docks.",
   },
   {
     id: 5,
@@ -139,7 +232,7 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     storeName: "Artisan Leather & Goods",
     storeSlug: "artisan-leather",
     categorySpecialty: "Bags, Leather & Fragrances",
-    memberRole: "Team Member 5 / Craft & Scent Specialist",
+    memberRole: "Leather Craftsman",
     paystackSubaccount: "ACCT_yaw_leather_554",
     commissionRate: 0.05,
     payoutBank: "AT Money",
@@ -147,79 +240,69 @@ export const INITIAL_SELLERS: InitialSeller[] = [
     balanceCents: 185000,
     totalPaidCents: 390000,
     status: "active",
-    passcode: "5555",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-    bio: "Hand-stitched full-grain leather travel bags, RFID protected wallets, and niche artisanal extraits de parfum.",
+    bio: "Handcrafted full-grain leather travel bags, RFID protected wallets, and artisanal extraits de parfum.",
   },
 ];
 
 export const INITIAL_CATEGORIES = [
   {
     slug: "all",
-    name: "All Marketplace",
-    description: "Discover curated collections across footwear, timepieces, luxury streetwear, audio tech, and handcrafted leather.",
+    name: "All Collections",
+    description: "Browse authenticated products across Footwear, Horology, Streetwear, Audio Tech, and Luxury Leather.",
     icon: "Sparkles",
-    itemCount: 24,
+    itemCount: 16,
     featured: true,
   },
   {
     slug: "sneakers",
     name: "Footwear & Sneakers",
-    description: "Curated by Kwame Mensah (Kicks & Soles Hub) — Retro basketball classics, knit trainers, and marathon silhouettes.",
+    description: "Retro basketball silhouettes, marathon carbon runners, and luxury leather trainers.",
     icon: "Footprints",
-    itemCount: 6,
+    itemCount: 4,
     featured: true,
     bannerImage: "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1200&auto=format&fit=crop",
   },
   {
     slug: "watches",
     name: "Watches & Horology",
-    description: "Curated by Ama Serwaa (Chrono & Heritage) — Precision automatic chronographs, sapphire glass, and luxury bracelets.",
+    description: "Precision automatic chronographs, sapphire crystal steel, and dual-time GMT divers.",
     icon: "Watch",
-    itemCount: 4,
+    itemCount: 3,
     featured: true,
     bannerImage: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
   },
   {
     slug: "tops",
     name: "Streetwear & Apparel",
-    description: "Curated by Kofi Boateng (Cyybrid Atelier) — Heavyweight boxy tees, loopback French terry, and tailored linen.",
+    description: "Heavyweight boxy organic tees, loopback French terry hoodies, and resort linen shirts.",
     icon: "Shirt",
-    itemCount: 5,
+    itemCount: 3,
     featured: true,
     bannerImage: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1200&auto=format&fit=crop",
   },
   {
     slug: "tech",
     name: "Electronics & Audio",
-    description: "Curated by Esi Darko (Volt Audio) — Titanium driver ANC headphones, wireless charging hubs, and smart speakers.",
+    description: "Titanium active noise-cancelling headphones, true wireless earbuds, and 3-in-1 MagCharge docks.",
     icon: "Zap",
-    itemCount: 4,
+    itemCount: 3,
     featured: true,
     bannerImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop",
   },
   {
     slug: "bags",
     name: "Leather & Travel Bags",
-    description: "Curated by Yaw Osei (Artisan Leather) — Full-grain duffles, minimalist RFID wallets, and weatherproof backpacks.",
+    description: "Full-grain weekender duffles, RFID calfskin wallets, and artisanal extraits de parfum.",
     icon: "Package",
     itemCount: 3,
     featured: true,
     bannerImage: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1200&auto=format&fit=crop",
   },
-  {
-    slug: "perfumes",
-    name: "Fragrances & Scents",
-    description: "Artisanal niche extraits de parfum, opulent amber ouds, and signature body mists.",
-    icon: "Flame",
-    itemCount: 2,
-    featured: false,
-    bannerImage: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1200&auto=format&fit=crop",
-  },
 ];
 
 export const INITIAL_PRODUCTS: InitialProduct[] = [
-  // ─── SELLER 1: KWAME MENSAH (Kicks & Soles Hub - SNEAKERS) ────────────────
+  // ─── FOOTWEAR ───────────────────────────────────────────────
   {
     sellerId: 1,
     slug: "court-heritage-85-retro-high",
@@ -246,7 +329,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     isNew: true,
     isFeatured: true,
     isTrending: true,
-    badge: "SELLER CHOICE",
+    badge: "BESTSELLER",
     gender: "Unisex",
     sku: "SNK-CRT-85",
     approvalStatus: "approved",
@@ -372,7 +455,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     ],
   },
 
-  // ─── SELLER 2: AMA SERWAA (Chrono & Heritage - WATCHES) ───────────────────
+  // ─── WATCHES & HOROLOGY ─────────────────────────────────────
   {
     sellerId: 2,
     slug: "chronos-stealth-pvd-chronograph",
@@ -451,7 +534,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     brand: "CHRONO & HERITAGE",
     category: "watches",
     subCategory: "Divers & GMT",
-    description: "Professional grade 300-meter diver watch with 24-click ceramic bi-directional bezel, independent GMT hour hand for international travel, and solid link jubilee bracelet.",
+    description: "Professional grade 300-meter diver watch with 24-click ceramic bi-directional bezel, independent GMT hour hand, and solid link jubilee bracelet.",
     features: [
       "300M / 30 ATM Deep Sea Water Resistance",
       "Scratch-proof Ceramic Bi-Color GMT 24-Hour Bezel",
@@ -479,7 +562,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     ],
   },
 
-  // ─── SELLER 3: KOFI BOATENG (Cyybrid Atelier Wear - APPAREL) ──────────────
+  // ─── STREETWEAR & APPAREL ───────────────────────────────────
   {
     sellerId: 3,
     slug: "heavyweight-oversized-noir-tee",
@@ -593,7 +676,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     ],
   },
 
-  // ─── SELLER 4: ESI DARKO (Volt Audio & Gadgets - TECH) ────────────────────
+  // ─── ELECTRONICS & AUDIO ────────────────────────────────────
   {
     sellerId: 4,
     slug: "volt-studio-pro-anc-headphones",
@@ -698,7 +781,7 @@ export const INITIAL_PRODUCTS: InitialProduct[] = [
     ],
   },
 
-  // ─── SELLER 5: YAW OSEI (Artisan Leather & Scents - BAGS & FRAGRANCES) ────
+  // ─── LEATHER & BAGS ─────────────────────────────────────────
   {
     sellerId: 5,
     slug: "sovereign-full-grain-leather-duffle",

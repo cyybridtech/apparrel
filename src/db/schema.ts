@@ -8,7 +8,25 @@ import {
   timestamp,
 } from "drizzle-orm/mysql-core";
 
-// Sellers table (The 5 Initial Cyybrid Team Members & Future External Vendors)
+// Unified Users Table (Customers, Sellers, and Platform Admins)
+export const users = mysqlTable("users", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }).notNull().default("customer"), // 'customer' | 'seller' | 'admin'
+  sellerId: int("seller_id"), // Linked seller ID if role is 'seller'
+  address: varchar("address", { length: 255 }),
+  city: varchar("city", { length: 100 }),
+  region: varchar("region", { length: 100 }).default("Greater Accra"),
+  postalCode: varchar("postal_code", { length: 50 }),
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Sellers table (The 5 Founding Cyybrid Team Members & Future Marketplace Vendors)
 export const sellers = mysqlTable("sellers", {
   id: int("id").autoincrement().primaryKey(),
   memberNumber: int("member_number").notNull().default(1),
@@ -26,7 +44,6 @@ export const sellers = mysqlTable("sellers", {
   balanceCents: int("balance_cents").notNull().default(0), // Available earnings
   totalPaidCents: int("total_paid_cents").notNull().default(0), // Total historical payouts
   status: varchar("status", { length: 50 }).notNull().default("active"), // 'active' | 'suspended' | 'pending'
-  passcode: varchar("passcode", { length: 100 }).notNull().default("seller123"),
   avatar: text("avatar"),
   bio: text("bio"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -90,7 +107,7 @@ export const productSizes = mysqlTable("product_sizes", {
   lowStockThreshold: int("low_stock_threshold").notNull().default(3),
 });
 
-// Orders table
+// Orders table with Structured Delivery Tracking
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   orderNo: varchar("order_no", { length: 100 }).notNull().unique(), // e.g. ORD-9824
@@ -99,7 +116,7 @@ export const orders = mysqlTable("orders", {
   phone: varchar("phone", { length: 50 }).notNull(),
   address: varchar("address", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
-  region: varchar("region", { length: 100 }).notNull().default("Accra"),
+  region: varchar("region", { length: 100 }).notNull().default("Greater Accra"),
   postalCode: varchar("postal_code", { length: 50 }),
   subtotalCents: int("subtotal_cents").notNull(),
   shippingCents: int("shipping_cents").notNull().default(0),
@@ -110,9 +127,10 @@ export const orders = mysqlTable("orders", {
   paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("paid"), // 'unpaid' | 'paid' | 'refunded'
   paymentMethod: varchar("payment_method", { length: 50 }).notNull().default("paystack"),
   paystackRef: varchar("paystack_ref", { length: 255 }),
-  trackingCode: varchar("tracking_code", { length: 100 }).notNull().unique(), // e.g. TRK-481920
-  courierName: varchar("courier_name", { length: 100 }).notNull().default("Cyybrid Express Dispatch"),
+  trackingCode: varchar("tracking_code", { length: 100 }).notNull().unique(), // e.g. TRK-481920-GH
+  courierName: varchar("courier_name", { length: 100 }).notNull().default("Cyybrid Express Fleet"),
   courierPhone: varchar("courier_phone", { length: 50 }).notNull().default("+233 24 555 8901"),
+  courierVehicle: varchar("courier_vehicle", { length: 100 }).notNull().default("Motorbike Courier #GH-412"),
   courierLat: double("courier_lat").default(5.6037),
   courierLng: double("courier_lng").default(-0.1870),
   destinationLat: double("destination_lat").default(5.6148),
@@ -123,7 +141,7 @@ export const orders = mysqlTable("orders", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Order Items table with Seller Attribution & Revenue Split
+// Order Items table with Seller Attribution & Split Accounting
 export const orderItems = mysqlTable("order_items", {
   id: int("id").autoincrement().primaryKey(),
   orderId: int("order_id")
@@ -131,7 +149,7 @@ export const orderItems = mysqlTable("order_items", {
     .references(() => orders.id, { onDelete: "cascade" }),
   productId: int("product_id").notNull(),
   sellerId: int("seller_id").notNull().default(1),
-  sellerStore: varchar("seller_store", { length: 255 }).notNull().default("Cyybrid Official"),
+  sellerStore: varchar("seller_store", { length: 255 }).notNull().default("Cyybrid Store"),
   name: varchar("name", { length: 255 }).notNull(),
   brand: varchar("brand", { length: 100 }).notNull(),
   category: varchar("category", { length: 100 }).notNull(),
@@ -150,18 +168,18 @@ export const sellerPayouts = mysqlTable("seller_payouts", {
   sellerName: varchar("seller_name", { length: 255 }).notNull(),
   storeName: varchar("store_name", { length: 255 }).notNull(),
   amountCents: int("amount_cents").notNull(),
-  reference: varchar("100", { length: 100 }).notNull(),
+  reference: varchar("reference", { length: 100 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("completed"), // 'pending' | 'completed' | 'failed'
   payoutMethod: varchar("payout_method", { length: 100 }).notNull().default("Paystack Split Subaccount"),
   note: text("note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Audit & Governance Logs (For Team Transparency & Security)
+// Audit & Governance Logs (Security & Traceability)
 export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
   actor: varchar("actor", { length: 255 }).notNull(),
-  actorRole: varchar("actor_role", { length: 50 }).notNull().default("seller"), // 'super_admin' | 'seller' | 'system'
+  actorRole: varchar("actor_role", { length: 50 }).notNull().default("customer"), // 'admin' | 'seller' | 'customer' | 'system'
   action: varchar("action", { length: 255 }).notNull(),
   target: varchar("target", { length: 255 }).notNull(),
   details: text("details").notNull(),
@@ -179,7 +197,7 @@ export const inventoryLogs = mysqlTable("inventory_logs", {
   changeQty: int("change_qty").notNull(),
   previousStock: int("previous_stock").notNull(),
   newStock: int("new_stock").notNull(),
-  reason: varchar("reason", { length: 255 }).notNull().default("Seller Restock"),
-  adminUser: varchar("admin_user", { length: 100 }).notNull().default("Seller Admin"),
+  reason: varchar("reason", { length: 255 }).notNull().default("Stock Adjustment"),
+  adminUser: varchar("admin_user", { length: 100 }).notNull().default("Operations Lead"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

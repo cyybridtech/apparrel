@@ -160,17 +160,17 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                 )}
               </Link>
 
-              {/* VIP Account / Auth Trigger */}
+              {/* Account / Auth Trigger */}
               {user ? (
                 <div className="relative group">
                   <button
                     onClick={() => navigate("/account")}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 hover:border-slate-300 text-xs font-medium text-slate-800 transition-colors"
                   >
-                    <Crown className="w-3.5 h-3.5 text-amber-500" />
+                    <User className="w-3.5 h-3.5 text-slate-700" />
                     <span className="hidden md:inline font-bold">{user.name.split(" ")[0]}</span>
-                    <span className="text-[10px] font-mono bg-slate-200/70 text-slate-700 px-1.5 py-0.5 rounded">
-                      {user.tier}
+                    <span className="text-[10px] font-mono bg-slate-200/70 text-slate-700 px-1.5 py-0.5 rounded capitalize">
+                      {user.role}
                     </span>
                   </button>
                 </div>
@@ -180,7 +180,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                   className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
                 >
                   <User className="w-3.5 h-3.5" />
-                  <span>VIP Sign In</span>
+                  <span>Sign In</span>
                 </button>
               )}
 
@@ -275,7 +275,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                   className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-900 text-xs font-bold flex items-center justify-center gap-2"
                 >
                   <User className="w-4 h-4" />
-                  <span>VIP Sign In / Register</span>
+                  <span>Sign In / Register</span>
                 </button>
               )}
             </div>

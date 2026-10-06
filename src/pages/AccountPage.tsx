@@ -4,7 +4,6 @@ import {
   User,
   Package,
   MapPin,
-  Sparkles,
   ShieldCheck,
   CreditCard,
   Plus,
@@ -17,18 +16,19 @@ import {
   FileText,
   Printer,
   ChevronRight,
+  Store,
 } from "lucide-react";
 import { useAuth, UserAddress } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
-import { fetchOrderByNumber, Order } from "../lib/api";
+import { Order, fetchOrders } from "../lib/api";
 import { formatDateTime } from "../lib/utils";
 
 export function AccountPage() {
-  const { user, isAuthenticated, logout, openAuthModal, updateProfile, addAddress, removeAddress, setDefaultAddress } = useAuth();
+  const { user, isAuthenticated, logout, openAuthModal, addAddress, removeAddress, setDefaultAddress } = useAuth();
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "vip" | "settings">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
@@ -43,33 +43,31 @@ export function AccountPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
-    // Load user orders
     setLoadingOrders(true);
-    Promise.all([
-      fetchOrderByNumber("ORD-92841").catch(() => null),
-      fetchOrderByNumber("ORD-88412").catch(() => null),
-    ])
-      .then(([o1, o2]) => {
-        const loaded = [o1, o2].filter(Boolean) as Order[];
-        setOrders(loaded);
+    fetchOrders()
+      .then((data) => {
+        // Filter orders placed by this user's email or all if matching
+        const userOrders = data.filter((o) => o.email.toLowerCase() === user.email.toLowerCase());
+        setOrders(userOrders);
       })
+      .catch(() => setOrders([]))
       .finally(() => setLoadingOrders(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   if (!isAuthenticated || !user) {
     return (
       <div className="max-w-md mx-auto px-4 py-24 text-center space-y-5 animate-fadeIn">
         <div className="w-16 h-16 rounded-3xl bg-slate-900 text-amber-400 flex items-center justify-center mx-auto shadow-xl">
-          <User className="w-8 h-8" />
+          <User className="w-8 h-8 text-white" />
         </div>
         <div>
           <h2 className="text-2xl font-bold font-heading text-slate-950">
             Account Sign In Required
           </h2>
           <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            Sign in to access your saved delivery addresses, order history, and exclusive VIP rewards.
+            Sign in to access your saved delivery addresses, order history, and account settings.
           </p>
         </div>
         <div className="flex gap-3 justify-center pt-2">
@@ -83,7 +81,7 @@ export function AccountPage() {
             onClick={() => openAuthModal("register")}
             className="btn-secondary text-xs py-3 px-6 rounded-2xl"
           >
-            Join VIP Club
+            Create Account
           </button>
         </div>
       </div>
@@ -112,7 +110,7 @@ export function AccountPage() {
     printWin.document.write(`
       <html>
         <head>
-          <title>Invoice #${ord.orderNo} - APPARREL</title>
+          <title>Invoice #${ord.orderNo} - CYYBRID MARKETPLACE</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
             .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -130,14 +128,14 @@ export function AccountPage() {
         <body>
           <div class="header">
             <div>
-              <div class="logo">APPARREL.</div>
-              <div class="meta">Luxury Streetwear & Essentials • Accra, Ghana</div>
+              <div class="logo">CYYBRID TECHNOLOGY MARKETPLACE</div>
+              <div class="meta">Official Multi-Seller Commerce Platform • Accra, Ghana</div>
             </div>
             <div style="text-align: right;">
               <h2 style="margin: 0; font-size: 18px;">OFFICIAL INVOICE</h2>
               <div class="meta">Order Ref: <strong>${ord.orderNo}</strong></div>
               <div class="meta">Date: ${new Date(ord.createdAt).toLocaleDateString()}</div>
-              <div class="meta">Payment: <strong>VERIFIED (Paystack)</strong></div>
+              <div class="meta">Payment: <strong>VERIFIED (${ord.paymentMethod.toUpperCase()})</strong></div>
             </div>
           </div>
 
@@ -184,7 +182,7 @@ export function AccountPage() {
           </div>
 
           <div class="footer">
-            Thank you for shopping with APPARREL. All items are authenticated and covered by our 7-day exchange guarantee.
+            Thank you for shopping with Cyybrid Technology Marketplace. All orders are verified and protected.
           </div>
           <script>window.print();</script>
         </body>
@@ -197,21 +195,16 @@ export function AccountPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn pb-16">
       {/* Top Profile Banner */}
       <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl border border-slate-800">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 text-slate-950 flex items-center justify-center font-black text-2xl font-heading shadow-xl shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 text-white flex items-center justify-center font-black text-2xl font-heading shadow-xl shrink-0">
               {user.name.charAt(0)}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase bg-amber-400/20 text-amber-400 border border-amber-400/30">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {user.tier} MEMBER
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  {user.points} VIP Points
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase bg-white/10 text-white border border-white/20">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  {user.role === "admin" ? "SUPER ADMIN" : user.role === "seller" ? "SELLER ACCOUNT" : "CUSTOMER ACCOUNT"}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black font-heading text-white mt-1">
@@ -222,6 +215,16 @@ export function AccountPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {(user.role === "admin" || user.role === "seller") && (
+              <Link
+                to="/admin"
+                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold flex items-center gap-2 transition-colors shadow-sm"
+              >
+                <Store className="w-4 h-4" />
+                <span>Go to Seller Center</span>
+              </Link>
+            )}
+
             <button
               onClick={logout}
               className="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-xs font-semibold flex items-center gap-2"
@@ -232,41 +235,46 @@ export function AccountPage() {
           </div>
         </div>
 
-        {/* Loyalty Tier Progress */}
+        {/* Account Summary Stats */}
         <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-              VIP Tier Status
+              Default Delivery Address
             </span>
-            <span className="text-lg font-black font-heading text-amber-400 mt-0.5 block">
-              {user.tier}
+            <span className="text-sm font-bold text-white mt-1 block truncate">
+              {user.addresses.find((a) => a.isDefault)?.street || user.address || "Not set yet"}
             </span>
             <span className="text-[11px] text-slate-400">
-              Unlocked Free Express Shipping & Early Drops
+              {user.addresses.find((a) => a.isDefault)?.city || user.city || "Accra"},{" "}
+              {user.addresses.find((a) => a.isDefault)?.region || user.region || "Greater Accra"}
             </span>
           </div>
 
           <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-              Loyalty Rewards Points
+              Orders History
             </span>
             <span className="text-lg font-black font-heading text-white mt-0.5 block">
-              {user.points.toLocaleString()} PTS
+              {orders.length} Placed
             </span>
             <span className="text-[11px] text-emerald-400 font-semibold">
-              Worth {formatPrice(user.points * 10)} in store credits
+              Live automated tracking enabled
             </span>
           </div>
 
           <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-              Lifetime Catalog Spend
+              Platform Role & Access
             </span>
-            <span className="text-lg font-black font-heading text-white mt-0.5 block">
-              {formatPrice(user.totalSpentCents)}
+            <span className="text-lg font-black font-heading text-white mt-0.5 block capitalize">
+              {user.role}
             </span>
             <span className="text-[11px] text-slate-400">
-              {user.ordersCount} Completed Orders
+              {user.role === "admin"
+                ? "Full control over sellers & platform"
+                : user.role === "seller"
+                ? "Product & fulfillment portal access"
+                : "Verified marketplace customer"}
             </span>
           </div>
         </div>
@@ -277,7 +285,7 @@ export function AccountPage() {
         {[
           { id: "orders", label: `Order History (${orders.length})`, icon: Package },
           { id: "addresses", label: `Saved Addresses (${user.addresses.length})`, icon: MapPin },
-          { id: "vip", label: "VIP Club & Perks", icon: Sparkles },
+          { id: "profile", label: "Profile & Settings", icon: User },
         ].map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -388,10 +396,10 @@ export function AccountPage() {
               <Package className="w-12 h-12 text-slate-300 mx-auto" />
               <h3 className="font-bold text-slate-900 text-base font-heading">No Orders Placed Yet</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Explore our current catalog drops to start earning VIP reward points.
+                Explore our catalog to find premium products from verified sellers.
               </p>
               <Link to="/shop" className="btn-primary text-xs py-2.5 px-6 rounded-full inline-block mt-2">
-                Explore Catalog
+                Explore Marketplace
               </Link>
             </div>
           )}
@@ -409,7 +417,7 @@ export function AccountPage() {
                 Delivery Addresses
               </h3>
               <p className="text-xs text-slate-500">
-                Manage your saved addresses for instant 1-click checkout.
+                Manage your saved addresses for fast 1-click checkout.
               </p>
             </div>
 
@@ -594,37 +602,47 @@ export function AccountPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: VIP CLUB & PERKS */}
+      {/* TAB 3: PROFILE DETAILS */}
       {/* ========================================================================= */}
-      {activeTab === "vip" && (
+      {activeTab === "profile" && (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-sm space-y-6">
-          <div className="max-w-2xl space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
-              Exclusive Member Privileges
-            </span>
-            <h3 className="text-2xl font-black font-heading text-slate-950">
-              Your NOIR VIP Benefits
+          <div className="max-w-2xl space-y-1">
+            <h3 className="text-xl font-black font-heading text-slate-950">
+              Personal Information & Security
             </h3>
             <p className="text-xs text-slate-500">
-              As a top-tier customer, you receive personalized privileges across all global drops and private concierge services.
+              Your contact and account credentials registered on Cyybrid Technology Marketplace.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-            {[
-              { title: "Free Priority Delivery", desc: "Zero delivery fees on all orders nationwide with priority dispatch." },
-              { title: "Early Drop Access", desc: "Shop high-demand sneaker and perfume drops 2 hours before general release." },
-              { title: "Private Concierge", desc: "Direct WhatsApp concierge support for styling guidance and size reserving." },
-              { title: "Double Rewards Points", desc: "Earn 20 points for every GH₵ 1 spent, redeemable on future drops." },
-            ].map((perk, i) => (
-              <div key={i} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-                <div className="w-8 h-8 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center font-bold text-xs">
-                  ★
-                </div>
-                <h4 className="text-xs font-bold text-slate-900 font-heading">{perk.title}</h4>
-                <p className="text-[11px] text-slate-500 leading-relaxed">{perk.desc}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Full Legal Name
+              </span>
+              <p className="text-sm font-bold text-slate-900">{user.name}</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Email Address
+              </span>
+              <p className="text-sm font-bold text-slate-900">{user.email}</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Phone Contact
+              </span>
+              <p className="text-sm font-bold text-slate-900">{user.phone || "Not specified"}</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Account Role
+              </span>
+              <p className="text-sm font-bold text-slate-900 capitalize">{user.role}</p>
+            </div>
           </div>
         </div>
       )}

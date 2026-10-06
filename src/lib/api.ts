@@ -1,4 +1,17 @@
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_SELLERS } from "../db/seed";
+import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_SELLERS, INITIAL_USERS } from "../db/seed";
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: "admin" | "seller" | "customer";
+  sellerId?: number;
+  sellerStore?: string;
+  address?: string;
+  city?: string;
+  region?: string;
+}
 
 export interface Seller {
   id: number;
@@ -107,6 +120,7 @@ export interface Order {
   trackingCode: string;
   courierName: string;
   courierPhone: string;
+  courierVehicle?: string;
   courierLat?: number;
   courierLng?: number;
   destinationLat?: number;
@@ -200,7 +214,7 @@ export interface InventoryLog {
 export interface AuditLog {
   id: number;
   actor: string;
-  actorRole: "super_admin" | "seller" | "system";
+  actorRole: "admin" | "seller" | "customer" | "system";
   action: string;
   target: string;
   details: string;
@@ -210,9 +224,8 @@ export interface AuditLog {
 
 const API_BASE = "";
 
-// Helper to get auth header from active session token
 export function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("apparrel_admin_token") || localStorage.getItem("cyybrid_session_token");
+  const token = localStorage.getItem("cyybrid_session_token");
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -226,13 +239,83 @@ const FALLBACK_PRODUCTS: Product[] = INITIAL_PRODUCTS.map((p, idx) => {
     ...p,
     id: idx + 1,
     totalStock: p.sizes.reduce((sum, sz) => sum + sz.stock, 0),
-    sellerName: s?.name || "Cyybrid Partner",
-    sellerStore: s?.storeName || "Cyybrid Store",
-    sellerSlug: s?.storeSlug || "cyybrid",
+    sellerName: s?.name,
+    sellerStore: s?.storeName,
+    sellerSlug: s?.storeSlug,
   };
 });
 
-// ─── Public API Endpoints ───────────────────────────────────────
+// ─── Unified Authentication ────────────────────────────────────
+
+export async function authLogin(email: string, password: string): Promise<{ success: boolean; token: string; user: User; seller?: Seller }> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Login failed. Please check your credentials.");
+  }
+
+  if (data.token) {
+    localStorage.setItem("cyybrid_session_token", data.token);
+    localStorage.setItem("cyybrid_user", JSON.stringify(data.user));
+    localStorage.setItem("cyybrid_role", data.user.role);
+    if (data.user.sellerId) {
+      localStorage.setItem("cyybrid_seller_id", String(data.user.sellerId));
+    } else {
+      localStorage.removeItem("cyybrid_seller_id");
+    }
+  }
+
+  return data;
+}
+
+export async function authRegister(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  address?: string;
+  city?: string;
+  region?: string;
+}): Promise<{ success: boolean; token: string; user: User }> {
+  const res = await fetch(`${API_BASE}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Registration failed. Please verify your details.");
+  }
+
+  if (data.token) {
+    localStorage.setItem("cyybrid_session_token", data.token);
+    localStorage.setItem("cyybrid_user", JSON.stringify(data.user));
+    localStorage.setItem("cyybrid_role", data.user.role);
+  }
+
+  return data;
+}
+
+export async function fetchCurrentUser(): Promise<User | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.user;
+    }
+  } catch {}
+  return null;
+}
+
+// ─── Public Catalog Endpoints ───────────────────────────────────
 
 export async function fetchSellers(): Promise<Seller[]> {
   try {
@@ -296,8 +379,7 @@ export async function fetchProducts(params?: Record<string, string>): Promise<Pr
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.brand.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.sellerStore?.toLowerCase().includes(q)
+        p.description.toLowerCase().includes(q)
     );
   }
   return results;
@@ -346,9 +428,21 @@ export async function createOrder(orderData: any): Promise<{ success: boolean; o
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || "Failed to place multi-seller order.");
+    throw new Error(data.error || "Failed to place order.");
   }
   return data;
+}
+
+export async function fetchOrders(email?: string): Promise<Order[]> {
+  try {
+    const query = email ? `?email=${encodeURIComponent(email)}` : "";
+    const res = await fetch(`${API_BASE}/api/orders${query}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.orders || [];
+    }
+  } catch {}
+  return [];
 }
 
 export async function fetchOrderByNumber(code: string): Promise<Order> {
@@ -357,59 +451,31 @@ export async function fetchOrderByNumber(code: string): Promise<Order> {
     const data = await res.json();
     return data.order;
   }
-  throw new Error("Order not found with provided reference code");
+  throw new Error("Order not found with provided tracking code.");
 }
 
-// ─── Authentication & Portal Sign-In ────────────────────────────
-
-export async function portalLogin(
-  pin: string,
-  email?: string
-): Promise<{
-  success: boolean;
-  role: "super_admin" | "seller";
-  token: string;
-  name?: string;
-  seller?: Seller;
-  message?: string;
-}> {
-  const res = await fetch(`${API_BASE}/api/portal/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pin, email }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || "Authentication failed. Check your PIN or Passkey.");
-  }
-
-  // Save session token
-  if (data.token) {
-    localStorage.setItem("apparrel_admin_token", data.token);
-    localStorage.setItem("cyybrid_session_token", data.token);
-    localStorage.setItem("cyybrid_role", data.role);
-    if (data.seller) {
-      localStorage.setItem("cyybrid_seller_id", String(data.seller.id));
-    } else {
-      localStorage.removeItem("cyybrid_seller_id");
+export async function verifyAdminPasskey(passkey: string): Promise<{ authorized: boolean; token?: string; seller?: any }> {
+  try {
+    const res = await authLogin("admin@cyybrid.tech", passkey);
+    if (res.user) {
+      return { authorized: true, token: res.token, seller: res.user };
     }
-  }
+  } catch {}
+  return { authorized: false };
+}
 
+export async function updateOrderDelivery(orderId: number, deliveryDetails: any): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/orders/${orderId}/delivery`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(deliveryDetails),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update order delivery.");
   return data;
 }
 
-// Legacy verification helper for compatibility
-export async function verifyAdminPasskey(pin: string): Promise<{ authorized: boolean; token?: string }> {
-  try {
-    const result = await portalLogin(pin);
-    return { authorized: result.success, token: result.token };
-  } catch {
-    return { authorized: false };
-  }
-}
-
-// ─── Seller-Isolated API Endpoints ──────────────────────────────
+// ─── Seller & Admin Dashboard Endpoints ─────────────────────────
 
 export async function fetchSellerProducts(sellerId?: number): Promise<Product[]> {
   const query = sellerId ? `?sellerId=${sellerId}` : "";
@@ -420,7 +486,7 @@ export async function fetchSellerProducts(sellerId?: number): Promise<Product[]>
     const data = await res.json();
     return data.products || [];
   }
-  throw new Error("Failed to load seller catalog");
+  throw new Error("Failed to load catalog");
 }
 
 export async function saveSellerProduct(productData: any, isEdit = false, id?: number): Promise<any> {
@@ -450,7 +516,7 @@ export async function restockSellerProduct(
   productId: number,
   sizeLabel: string,
   addStock: number,
-  reason = "Seller Restock"
+  reason = "Restock"
 ): Promise<any> {
   const res = await fetch(`${API_BASE}/api/seller/restock`, {
     method: "POST",
@@ -471,7 +537,7 @@ export async function fetchSellerOrders(sellerId?: number): Promise<Order[]> {
     const data = await res.json();
     return data.orders || [];
   }
-  throw new Error("Failed to load seller orders");
+  throw new Error("Failed to load orders");
 }
 
 export async function updateSellerOrderStatus(
@@ -479,14 +545,7 @@ export async function updateSellerOrderStatus(
   status: string,
   deliveryDetails?: any
 ): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/seller/orders/${orderId}/status`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status, ...deliveryDetails }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to update order status");
-  return data;
+  return updateOrderDelivery(orderId, { status, ...deliveryDetails });
 }
 
 export async function fetchSellerAnalytics(sellerId?: number): Promise<SellerAnalytics> {
@@ -498,10 +557,8 @@ export async function fetchSellerAnalytics(sellerId?: number): Promise<SellerAna
     const data = await res.json();
     return data.analytics;
   }
-  throw new Error("Failed to load seller analytics");
+  throw new Error("Failed to load analytics");
 }
-
-// ─── Super Admin Cockpit Endpoints ──────────────────────────────
 
 export async function fetchAdminOverview(): Promise<SuperAdminOverview> {
   const res = await fetch(`${API_BASE}/api/admin/overview`, {
@@ -511,7 +568,7 @@ export async function fetchAdminOverview(): Promise<SuperAdminOverview> {
     const data = await res.json();
     return data.overview;
   }
-  throw new Error("Failed to load Super Admin overview");
+  throw new Error("Failed to load admin overview");
 }
 
 export async function triggerSellerPayout(
@@ -525,7 +582,7 @@ export async function triggerSellerPayout(
     body: JSON.stringify({ amountCents, note }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to dispatch seller payout");
+  if (!res.ok) throw new Error(data.error || "Failed to dispatch payout");
   return data;
 }
 
@@ -550,37 +607,3 @@ export async function fetchInventoryLogs(): Promise<InventoryLog[]> {
   }
   throw new Error("Failed to load inventory logs");
 }
-
-// Backward compatibility wrappers
-export const restockProduct = restockSellerProduct;
-export const fetchAdminOrders = fetchSellerOrders;
-export const updateOrderStatus = updateSellerOrderStatus;
-export const saveProduct = saveSellerProduct;
-export const deleteProduct = deleteSellerProduct;
-export const fetchAdminAnalytics = async (): Promise<any> => {
-  try {
-    const overview = await fetchAdminOverview();
-    return {
-      totalRevenueCents: overview.totalGmvCents,
-      totalOrders: overview.totalOrdersCount,
-      totalProducts: overview.totalProductsCount,
-      totalUnitsSold: overview.totalItemsSold,
-      lowStockCount: 2,
-      outOfStockCount: 0,
-      recentOrders: [],
-      lowStockProducts: [],
-    };
-  } catch {
-    const sellerA = await fetchSellerAnalytics();
-    return {
-      totalRevenueCents: sellerA.totalGmvCents,
-      totalOrders: sellerA.totalOrders,
-      totalProducts: sellerA.totalProducts,
-      totalUnitsSold: sellerA.totalItemsSold,
-      lowStockCount: sellerA.lowStockCount,
-      outOfStockCount: 0,
-      recentOrders: [],
-      lowStockProducts: sellerA.lowStockItems,
-    };
-  }
-};

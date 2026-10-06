@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useToast } from "./ToastContext";
+import { authLogin, authRegister, fetchCurrentUser, User } from "../lib/api";
 
 export interface UserAddress {
   id: string;
-  label: string; // e.g. "Home", "Office"
+  label: string;
   recipientName: string;
   phone: string;
   street: string;
@@ -12,72 +13,37 @@ export interface UserAddress {
   isDefault: boolean;
 }
 
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  tier: "NOIR VIP" | "GOLD" | "SILVER" | "MEMBER";
-  points: number;
-  totalSpentCents: number;
-  ordersCount: number;
-  addresses: UserAddress[];
-  joinedAt: string;
+export interface UserProfile extends User {
+  addresses?: UserAddress[];
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isSeller: boolean;
+  isCustomer: boolean;
   isAuthModalOpen: boolean;
   openAuthModal: (mode?: "login" | "register") => void;
   closeAuthModal: () => void;
   authModalMode: "login" | "register";
   login: (email: string, pass: string) => Promise<boolean>;
-  register: (name: string, email: string, phone: string, pass: string) => Promise<boolean>;
+  register: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    address?: string;
+    city?: string;
+    region?: string;
+  }) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
-  addAddress: (address: Omit<UserAddress, "id">) => void;
-  removeAddress: (id: string) => void;
-  setDefaultAddress: (id: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = "apparrel_customer_session_v2";
-
-const DEFAULT_DEMO_USER: UserProfile = {
-  id: "USR-99410",
-  name: "Kofi Mensah",
-  email: "kofi.mensah@example.com",
-  phone: "+233 24 412 9902",
-  tier: "NOIR VIP",
-  points: 1450,
-  totalSpentCents: 489000,
-  ordersCount: 4,
-  joinedAt: "2025-11-15T10:00:00Z",
-  addresses: [
-    {
-      id: "addr-1",
-      label: "Primary Residence",
-      recipientName: "Kofi Mensah",
-      phone: "+233 24 412 9902",
-      street: "14 Independence Avenue, Airport Residential",
-      city: "Accra",
-      region: "Greater Accra",
-      isDefault: true,
-    },
-    {
-      id: "addr-2",
-      label: "Studio Office",
-      recipientName: "Kofi Mensah",
-      phone: "+233 20 891 0023",
-      street: "8 Senatorial Loop, Cantonments",
-      city: "Accra",
-      region: "Greater Accra",
-      isDefault: false,
-    },
-  ],
-};
+const USER_STORAGE_KEY = "cyybrid_user_session_v3";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -85,8 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(USER_STORAGE_KEY);
       if (saved) return JSON.parse(saved);
     } catch {}
-    // Default logged in demo luxury user
-    return DEFAULT_DEMO_USER;
+    return null;
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -101,6 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Verify session on mount
+  useEffect(() => {
+    const token = localStorage.getItem("cyybrid_session_token");
+    if (token) {
+      fetchCurrentUser()
+        .then((fetched) => {
+          if (fetched) {
+            setUser((prev) => ({ ...(prev || {}), ...fetched }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
   const openAuthModal = (mode: "login" | "register" = "login") => {
     setAuthModalMode(mode);
     setIsAuthModalOpen(true);
@@ -108,53 +87,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  const login = async (email: string, _pass: string): Promise<boolean> => {
-    // Instant client validation & demo account matching
+  const login = async (email: string, pass: string): Promise<boolean> => {
     if (!email || !email.includes("@")) {
       error("Invalid Email", "Please enter a valid email address.");
       return false;
     }
-
-    const newUser: UserProfile = {
-      ...DEFAULT_DEMO_USER,
-      email: email.trim().toLowerCase(),
-      name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    };
-
-    setUser(newUser);
-    success("Welcome Back", `Signed in as ${newUser.name} (${newUser.tier})`);
-    closeAuthModal();
-    return true;
-  };
-
-  const register = async (name: string, email: string, phone: string, _pass: string): Promise<boolean> => {
-    if (!name || !email || !phone) {
-      error("Missing Information", "Please fill in all registration fields.");
+    if (!pass) {
+      error("Password Required", "Please enter your password.");
       return false;
     }
 
-    const created: UserProfile = {
-      id: `USR-${Math.floor(10000 + Math.random() * 90000)}`,
-      name,
-      email: email.trim().toLowerCase(),
-      phone,
-      tier: "MEMBER",
-      points: 250, // Welcome bonus points
-      totalSpentCents: 0,
-      ordersCount: 0,
-      joinedAt: new Date().toISOString(),
-      addresses: [],
-    };
+    try {
+      const res = await authLogin(email, pass);
+      if (res.success && res.user) {
+        setUser(res.user);
+        success("Signed In", `Welcome back, ${res.user.name}.`);
+        closeAuthModal();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      error("Login Failed", err.message || "Invalid credentials. Please try again.");
+      return false;
+    }
+  };
 
-    setUser(created);
-    success("Account Created", "Welcome to APPARREL Club! You received 250 bonus reward points.");
-    closeAuthModal();
-    return true;
+  const register = async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    address?: string;
+    city?: string;
+    region?: string;
+  }): Promise<boolean> => {
+    if (!data.name || data.name.trim().length < 2) {
+      error("Missing Name", "Please provide your full name.");
+      return false;
+    }
+    if (!data.email || !data.email.includes("@")) {
+      error("Invalid Email", "Please provide a valid email address.");
+      return false;
+    }
+    if (!data.phone || data.phone.trim().length < 7) {
+      error("Invalid Phone", "Please provide a valid phone number.");
+      return false;
+    }
+    if (!data.password || data.password.length < 5) {
+      error("Weak Password", "Password must be at least 5 characters.");
+      return false;
+    }
+
+    try {
+      const res = await authRegister(data);
+      if (res.success && res.user) {
+        setUser(res.user);
+        success("Account Created", `Welcome to Cyybrid Marketplace, ${res.user.name}!`);
+        closeAuthModal();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      error("Registration Error", err.message || "Failed to create account.");
+      return false;
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem("cyybrid_session_token");
+    localStorage.removeItem("cyybrid_role");
+    localStorage.removeItem("cyybrid_seller_id");
+    localStorage.removeItem("cyybrid_user");
     setUser(null);
-    info("Signed Out", "You have been safely signed out.");
+    info("Signed Out", "You have been securely signed out.");
   };
 
   const updateProfile = (data: Partial<UserProfile>) => {
@@ -163,39 +168,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     success("Profile Updated", "Your account settings have been saved.");
   };
 
-  const addAddress = (address: Omit<UserAddress, "id">) => {
-    if (!user) return;
-    const newAddr: UserAddress = {
-      ...address,
-      id: `addr-${Date.now()}`,
-    };
-    const updated = address.isDefault
-      ? user.addresses.map((a) => ({ ...a, isDefault: false }))
-      : [...user.addresses];
-    setUser({ ...user, addresses: [...updated, newAddr] });
-    success("Address Added", `Added "${address.label}" to saved addresses.`);
-  };
-
-  const removeAddress = (id: string) => {
-    if (!user) return;
-    setUser({ ...user, addresses: user.addresses.filter((a) => a.id !== id) });
-    info("Address Removed", "Saved address was deleted.");
-  };
-
-  const setDefaultAddress = (id: string) => {
-    if (!user) return;
-    setUser({
-      ...user,
-      addresses: user.addresses.map((a) => ({ ...a, isDefault: a.id === id })),
-    });
-    success("Default Set", "Primary delivery address updated.");
-  };
+  const role = user?.role || "customer";
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: Boolean(user),
+        isAdmin: role === "admin",
+        isSeller: role === "seller",
+        isCustomer: role === "customer",
         isAuthModalOpen,
         openAuthModal,
         closeAuthModal,
@@ -204,9 +186,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateProfile,
-        addAddress,
-        removeAddress,
-        setDefaultAddress,
       }}
     >
       {children}
