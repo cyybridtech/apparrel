@@ -1063,6 +1063,228 @@ app.post("/api/admin/sellers/:id/payout", requireAdmin, (req: Request, res: Resp
   res.json({ success: true, message: `Dispatched GH₵ ${(payoutAmount / 100).toFixed(2)} to ${seller.name}`, payout });
 });
 
+// ─── Super Admin Team & Sellers Management ─────────────────────
+
+// Get all team members & sellers with account credentials summary
+app.get("/api/admin/team", requireAdmin, (_req: Request, res: Response) => {
+  try {
+    const teamList = memorySellers.map((seller) => {
+      const userAccount = memoryUsers.find((u) => u.sellerId === seller.id || (u.email.toLowerCase() === seller.email.toLowerCase() && u.role === "seller"));
+      const productCount = memoryProducts.filter((p) => p.sellerId === seller.id).length;
+      const orderCount = memoryOrders.filter((o) => o.items.some((i) => i.sellerId === seller.id)).length;
+
+      return {
+        ...seller,
+        userId: userAccount?.id,
+        userRole: userAccount?.role || "seller",
+        hasActiveLogin: !!userAccount,
+        productCount,
+        orderCount,
+      };
+    });
+
+    res.json({ success: true, team: teamList });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to load team members" });
+  }
+});
+
+// Add new team member / seller (provisions seller profile + login credentials)
+app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
+  try {
+    const session = (req as any).userSession;
+    const {
+      name,
+      email,
+      phone,
+      storeName,
+      categorySpecialty = "General Catalog",
+      memberRole = "Marketplace Specialist",
+      commissionRate = 0.05,
+      payoutBank = "MTN Mobile Money",
+      payoutAccount = "",
+      password = "seller",
+      bio = "",
+      address = "Accra",
+      city = "Accra",
+      region = "Greater Accra",
+    } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: "Full Name and Email are required to add a team member." });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim() || "seller";
+
+    // Check if user already exists
+    const existingUser = memoryUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    if (existingUser) {
+      return res.status(409).json({ error: "A user account with this email already exists." });
+    }
+
+    const sellerId = memorySellers.length > 0 ? Math.max(...memorySellers.map((s) => s.id)) + 1 : 1;
+    const storeSlug = (storeName || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+
+    const newSeller: StoredSeller = {
+      id: sellerId,
+      memberNumber: memorySellers.length + 1,
+      name: name.trim(),
+      email: cleanEmail,
+      phone: phone?.trim() || "+233 24 000 0000",
+      storeName: storeName?.trim() || `${name.trim()}'s Boutique`,
+      storeSlug,
+      categorySpecialty,
+      memberRole,
+      paystackSubaccount: `ACCT_CYYBRID_${sellerId}_${Math.random().toString(36).substring(2, 6)}`,
+      commissionRate: Number(commissionRate) || 0.05,
+      payoutBank: payoutBank || "MTN Mobile Money",
+      payoutAccount: payoutAccount || phone || "0240000000",
+      balanceCents: 0,
+      totalPaidCents: 0,
+      status: "active",
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0f172a&color=f8fafc&bold=true`,
+      bio: bio || `Verified Cyybrid Technology team member managing ${categorySpecialty}.`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    memorySellers.push(newSeller);
+
+    const newUser: StoredUser = {
+      id: memoryUsers.length > 0 ? Math.max(...memoryUsers.map((u) => u.id)) + 1 : 1,
+      name: name.trim(),
+      email: cleanEmail,
+      phone: phone?.trim() || "+233 24 000 0000",
+      password: cleanPassword,
+      role: "seller",
+      sellerId,
+      address,
+      city,
+      region,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    memoryUsers.push(newUser);
+
+    addAuditLog(
+      session.name,
+      "admin",
+      "Team Member Added",
+      newSeller.storeName,
+      `Super Admin added ${name} (${cleanEmail}) as ${memberRole}. Login provisioned.`
+    );
+
+    res.status(201).json({
+      success: true,
+      message: `Team member ${name} created successfully.`,
+      seller: newSeller,
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: newUser.role,
+        sellerId: newUser.sellerId,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to add team member" });
+  }
+});
+
+// Update team member / seller
+app.put("/api/admin/team/:id", requireAdmin, (req: Request, res: Response) => {
+  try {
+    const session = (req as any).userSession;
+    const sellerId = Number(req.params.id);
+    const seller = memorySellers.find((s) => s.id === sellerId);
+
+    if (!seller) {
+      return res.status(404).json({ error: "Team member / seller not found" });
+    }
+
+    const {
+      name,
+      phone,
+      storeName,
+      categorySpecialty,
+      memberRole,
+      commissionRate,
+      payoutBank,
+      payoutAccount,
+      status,
+      password,
+      bio,
+    } = req.body;
+
+    if (name) seller.name = name.trim();
+    if (phone) seller.phone = phone.trim();
+    if (storeName) seller.storeName = storeName.trim();
+    if (categorySpecialty) seller.categorySpecialty = categorySpecialty;
+    if (memberRole) seller.memberRole = memberRole;
+    if (commissionRate !== undefined) seller.commissionRate = Number(commissionRate);
+    if (payoutBank) seller.payoutBank = payoutBank;
+    if (payoutAccount) seller.payoutAccount = payoutAccount;
+    if (status) seller.status = status;
+    if (bio !== undefined) seller.bio = bio;
+    seller.updatedAt = new Date().toISOString();
+
+    // Sync with corresponding user account
+    const userAccount = memoryUsers.find((u) => u.sellerId === sellerId);
+    if (userAccount) {
+      if (name) userAccount.name = name.trim();
+      if (phone) userAccount.phone = phone.trim();
+      if (password) userAccount.password = String(password).trim();
+      userAccount.updatedAt = new Date().toISOString();
+    }
+
+    addAuditLog(
+      session.name,
+      "admin",
+      "Team Member Updated",
+      seller.storeName,
+      `Updated profile and settings for ${seller.name}.`
+    );
+
+    res.json({ success: true, message: `Team member ${seller.name} updated.`, seller });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to update team member" });
+  }
+});
+
+// Delete team member / seller
+app.delete("/api/admin/team/:id", requireAdmin, (req: Request, res: Response) => {
+  try {
+    const session = (req as any).userSession;
+    const sellerId = Number(req.params.id);
+    const idx = memorySellers.findIndex((s) => s.id === sellerId);
+
+    if (idx === -1) {
+      return res.status(404).json({ error: "Team member / seller not found" });
+    }
+
+    const removed = memorySellers.splice(idx, 1)[0];
+
+    // Remove user account
+    memoryUsers = memoryUsers.filter((u) => u.sellerId !== sellerId);
+
+    addAuditLog(
+      session.name,
+      "admin",
+      "Team Member Deleted",
+      removed.storeName,
+      `Super Admin removed ${removed.name} from the team.`
+    );
+
+    res.json({ success: true, message: `Team member ${removed.name} removed successfully.` });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to delete team member" });
+  }
+});
+
 // Audit Logs
 app.get("/api/admin/audit-logs", requireAdmin, (_req: Request, res: Response) => {
   res.json({ success: true, logs: memoryAuditLogs });

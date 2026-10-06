@@ -43,6 +43,9 @@ import {
   UserCheck,
   Mail,
   Navigation,
+  UserPlus,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import {
   fetchSellerProducts,
@@ -56,6 +59,10 @@ import {
   triggerSellerPayout,
   fetchAuditLogs,
   fetchInventoryLogs,
+  fetchAdminTeam,
+  addAdminTeamMember,
+  updateAdminTeamMember,
+  deleteAdminTeamMember,
   authLogin,
   Product,
   Order,
@@ -66,57 +73,10 @@ import {
   InventoryLog,
   Seller,
   User,
+  TeamMember,
 } from "../lib/api";
 import { useToast } from "../context/ToastContext";
 import { formatPrice, formatDateTime } from "../lib/utils";
-
-const SELLER_PROFILES_PRESET = [
-  {
-    id: 1,
-    name: "Kwame Mensah",
-    email: "kwame.mensah@cyybrid.tech",
-    storeName: "Kicks & Soles Hub",
-    category: "Footwear & Sneakers",
-    role: "Footwear Lead",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300",
-  },
-  {
-    id: 2,
-    name: "Ama Serwaa",
-    email: "ama.serwaa@cyybrid.tech",
-    storeName: "Chrono & Heritage",
-    category: "Watches & Horology",
-    role: "Horology Specialist",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=300",
-  },
-  {
-    id: 3,
-    name: "Kofi Boateng",
-    email: "kofi.boateng@cyybrid.tech",
-    storeName: "Cyybrid Atelier Wear",
-    category: "Streetwear & Apparel",
-    role: "Fashion Director",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300",
-  },
-  {
-    id: 4,
-    name: "Esi Darko",
-    email: "esi.darko@cyybrid.tech",
-    storeName: "Volt Audio & Gadgets",
-    category: "Electronics & Smart Tech",
-    role: "Tech Lead",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300",
-  },
-  {
-    id: 5,
-    name: "Yaw Osei",
-    email: "yaw.osei@cyybrid.tech",
-    storeName: "Artisan Leather & Scents",
-    category: "Leather Bags & Perfumes",
-    role: "Leather Craftsman",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300",
-  },
-];
 
 const ORDER_STAGES: { key: Order["status"]; label: string }[] = [
   { key: "confirmed", label: "1. Confirmed / Paid" },
@@ -147,11 +107,12 @@ export function AdminPortalPage() {
   const [loginLoading, setLoginLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "restock" | "products" | "orders" | "payouts" | "audit"
+    "overview" | "team" | "restock" | "products" | "orders" | "audit"
   >("overview");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [sellerAnalytics, setSellerAnalytics] = useState<SellerAnalytics | null>(null);
   const [adminOverview, setAdminOverview] = useState<SuperAdminOverview | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -171,6 +132,21 @@ export function AdminPortalPage() {
   // Add / Edit Product Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Team Member Modal (Add / Edit)
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
+  const [teamFormName, setTeamFormName] = useState("");
+  const [teamFormEmail, setTeamFormEmail] = useState("");
+  const [teamFormPhone, setTeamFormPhone] = useState("");
+  const [teamFormStore, setTeamFormStore] = useState("");
+  const [teamFormCategory, setTeamFormCategory] = useState("Footwear & Sneakers");
+  const [teamFormRole, setTeamFormRole] = useState("Footwear Specialist");
+  const [teamFormCommission, setTeamFormCommission] = useState(5);
+  const [teamFormBank, setTeamFormBank] = useState("MTN Mobile Money");
+  const [teamFormAccount, setTeamFormAccount] = useState("");
+  const [teamFormPassword, setTeamFormPassword] = useState("seller");
+  const [teamLoading, setTeamLoading] = useState(false);
 
   // Payout Modal
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
@@ -207,26 +183,28 @@ export function AdminPortalPage() {
     setLoading(true);
     try {
       if (currentUser.role === "admin") {
-        const [overview, prods, ords, audLogs, invLogs] = await Promise.all([
-          fetchAdminOverview(),
-          fetchSellerProducts(),
-          fetchSellerOrders(),
-          fetchAuditLogs(),
-          fetchInventoryLogs(),
+        const [overview, prods, ords, audLogs, invLogs, team] = await Promise.all([
+          fetchAdminOverview().catch(() => null),
+          fetchSellerProducts().catch(() => []),
+          fetchSellerOrders().catch(() => []),
+          fetchAuditLogs().catch(() => []),
+          fetchInventoryLogs().catch(() => []),
+          fetchAdminTeam().catch(() => []),
         ]);
-        setAdminOverview(overview);
+        if (overview) setAdminOverview(overview);
         setProducts(prods);
         setOrders(ords);
         setAuditLogs(audLogs);
         setInventoryLogs(invLogs);
+        setTeamMembers(team);
       } else {
         const [analytics, prods, ords, invLogs] = await Promise.all([
-          fetchSellerAnalytics(currentUser.sellerId),
-          fetchSellerProducts(currentUser.sellerId),
-          fetchSellerOrders(currentUser.sellerId),
-          fetchInventoryLogs(),
+          fetchSellerAnalytics(currentUser.sellerId).catch(() => null),
+          fetchSellerProducts(currentUser.sellerId).catch(() => []),
+          fetchSellerOrders(currentUser.sellerId).catch(() => []),
+          fetchInventoryLogs().catch(() => []),
         ]);
-        setSellerAnalytics(analytics);
+        if (analytics) setSellerAnalytics(analytics);
         setProducts(prods);
         setOrders(ords);
         setInventoryLogs(invLogs);
@@ -245,12 +223,9 @@ export function AdminPortalPage() {
     }
   }, [currentUser]);
 
-  const handleLoginSubmit = async (emailToUse?: string, passToUse?: string) => {
-    const email = emailToUse || loginEmail;
-    const pass = passToUse || loginPass;
-
-    if (!email || !pass) {
-      setLoginError("Please enter email and password.");
+  const handleLoginSubmit = async () => {
+    if (!loginEmail || !loginPass) {
+      setLoginError("Please enter your email and password.");
       return;
     }
 
@@ -258,7 +233,7 @@ export function AdminPortalPage() {
     setLoginError("");
 
     try {
-      const res = await authLogin(email, pass);
+      const res = await authLogin(loginEmail, loginPass);
       if (res.success && res.user) {
         if (res.user.role !== "admin" && res.user.role !== "seller") {
           setLoginError("Your account does not have management permissions.");
@@ -283,6 +258,117 @@ export function AdminPortalPage() {
     setCurrentUser(null);
     info("Signed Out", "Portal session terminated safely.");
   };
+
+  // ─── Team Management Handlers ───────────────────────────────────
+
+  const openAddTeamModal = (memberToEdit?: TeamMember) => {
+    if (memberToEdit) {
+      setEditingTeamMember(memberToEdit);
+      setTeamFormName(memberToEdit.name);
+      setTeamFormEmail(memberToEdit.email);
+      setTeamFormPhone(memberToEdit.phone);
+      setTeamFormStore(memberToEdit.storeName);
+      setTeamFormCategory(memberToEdit.categorySpecialty);
+      setTeamFormRole(memberToEdit.memberRole);
+      setTeamFormCommission(Math.round((memberToEdit.commissionRate || 0.05) * 100));
+      setTeamFormBank(memberToEdit.payoutBank || "MTN Mobile Money");
+      setTeamFormAccount(memberToEdit.payoutAccount || "");
+      setTeamFormPassword("");
+    } else {
+      setEditingTeamMember(null);
+      setTeamFormName("");
+      setTeamFormEmail("");
+      setTeamFormPhone("");
+      setTeamFormStore("");
+      setTeamFormCategory("Footwear & Sneakers");
+      setTeamFormRole("Footwear Specialist");
+      setTeamFormCommission(5);
+      setTeamFormBank("MTN Mobile Money");
+      setTeamFormAccount("");
+      setTeamFormPassword("seller");
+    }
+    setIsTeamModalOpen(true);
+  };
+
+  const handleSaveTeamMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teamFormName.trim() || !teamFormEmail.trim()) {
+      error("Missing Fields", "Name and Email are required.");
+      return;
+    }
+
+    setTeamLoading(true);
+    try {
+      const payload = {
+        name: teamFormName.trim(),
+        email: teamFormEmail.trim().toLowerCase(),
+        phone: teamFormPhone.trim() || "+233 24 000 0000",
+        storeName: teamFormStore.trim() || `${teamFormName.trim()}'s Boutique`,
+        categorySpecialty: teamFormCategory,
+        memberRole: teamFormRole,
+        commissionRate: teamFormCommission / 100,
+        payoutBank: teamFormBank,
+        payoutAccount: teamFormAccount || teamFormPhone || "0240000000",
+        password: teamFormPassword || "seller",
+      };
+
+      if (editingTeamMember) {
+        const res = await updateAdminTeamMember(editingTeamMember.id, payload);
+        if (res.success) {
+          success("Team Updated", `Profile for ${teamFormName} updated.`);
+          setIsTeamModalOpen(false);
+          loadPortalData();
+        }
+      } else {
+        const res = await addAdminTeamMember(payload);
+        if (res.success) {
+          success("Team Member Added", `${teamFormName} has been granted seller access.`);
+          setIsTeamModalOpen(false);
+          loadPortalData();
+        }
+      }
+    } catch (err: any) {
+      error("Operation Failed", err.message);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
+  const handleToggleMemberStatus = async (member: TeamMember) => {
+    const nextStatus = member.status === "active" ? "suspended" : "active";
+    try {
+      const res = await updateAdminTeamMember(member.id, { status: nextStatus });
+      if (res.success) {
+        setTeamMembers((prev) =>
+          prev.map((m) => (m.id === member.id ? { ...m, status: nextStatus } : m))
+        );
+        success("Status Updated", `${member.name} is now ${nextStatus}.`);
+      }
+    } catch (err: any) {
+      error("Update Failed", err.message);
+    }
+  };
+
+  const handleDeleteTeamMember = async (member: TeamMember) => {
+    if (!window.confirm(`Are you sure you want to remove ${member.name} and their seller account from the platform?`)) return;
+    try {
+      const res = await deleteAdminTeamMember(member.id);
+      if (res.success) {
+        setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
+        success("Member Removed", `${member.name} was removed from the team.`);
+      }
+    } catch (err: any) {
+      error("Delete Failed", err.message);
+    }
+  };
+
+  const copyCredentials = (member: TeamMember) => {
+    const text = `CYYBRID SELLER LOGIN\nPortal: /admin\nEmail: ${member.email}\nPassword: seller\nStore: ${member.storeName}`;
+    navigator.clipboard.writeText(text);
+    success("Copied to Clipboard", `Login credentials for ${member.name} copied.`);
+  };
+
+  // ─── Inventory & Delivery Handlers ──────────────────────────────
 
   const handleQuickRestock = async (productId: number, sizeLabel: string, amount: number) => {
     try {
@@ -448,69 +534,31 @@ export function AdminPortalPage() {
   // ─── LOGIN SCREEN ───────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-xl bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-900/5 relative overflow-hidden">
-          <div className="text-center space-y-2 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-slate-950 text-white flex items-center justify-center mx-auto shadow-md">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-8 space-y-6 relative z-10 animate-fadeIn">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-slate-950 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
               <Store className="w-7 h-7 text-emerald-400" />
             </div>
-            <h2 className="font-heading font-black text-2xl sm:text-3xl text-slate-950 tracking-tight">
-              CYYBRID PORTAL
+            <h2 className="text-2xl font-black font-heading text-slate-950">
+              Cyybrid Seller & Admin Portal
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-              Administrator & Seller Management Portal. Enter your email and password to sign in.
+            <p className="text-xs text-slate-500">
+              Unified management system for Super Admins and authorized Team Sellers.
             </p>
           </div>
 
-          {/* Preset Quick Login Buttons */}
-          <div className="space-y-3 mb-6">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Quick Test Credentials
-            </div>
-
-            <button
-              onClick={() => handleLoginSubmit("admin@cyybrid.tech", "admin")}
-              className="w-full p-3.5 rounded-2xl bg-slate-950 text-white hover:bg-black transition-all flex items-center justify-between shadow-xs"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-xs font-bold text-emerald-400">
-                  ADM
-                </div>
-                <div className="text-left">
-                  <div className="font-bold text-xs">Super Admin Master Account</div>
-                  <div className="text-[11px] text-slate-400">admin@cyybrid.tech</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
-            </button>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SELLER_PROFILES_PRESET.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => handleLoginSubmit(s.email, "seller")}
-                  className="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-left flex items-center gap-2.5"
-                >
-                  <img src={s.avatar} alt={s.name} className="w-8 h-8 rounded-xl object-cover border border-slate-200" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-xs text-slate-950 truncate">{s.name}</div>
-                    <div className="text-[10px] text-slate-500 truncate">{s.storeName}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Standard Email & Password Form */}
+          {/* Single Universal Login Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleLoginSubmit();
             }}
-            className="space-y-4 pt-4 border-t border-slate-200"
+            className="space-y-4 pt-2"
           >
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Account Email</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -518,7 +566,7 @@ export function AdminPortalPage() {
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="name@cyybrid.tech"
+                  placeholder="admin@cyybrid.tech"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
                 />
               </div>
@@ -555,7 +603,7 @@ export function AdminPortalPage() {
             </button>
           </form>
 
-          <div className="text-center mt-6">
+          <div className="text-center pt-2">
             <Link to="/" className="text-xs text-slate-500 hover:text-slate-950 font-semibold underline">
               ← Return to Storefront
             </Link>
@@ -578,11 +626,11 @@ export function AdminPortalPage() {
               <div className="flex items-center gap-2">
                 <h1 className="font-heading font-black text-base sm:text-lg text-slate-950 tracking-tight">
                   {currentUser?.role === "admin"
-                    ? "Cyybrid Platform Administration"
+                    ? "Cyybrid Platform Super Administration"
                     : `${currentUser?.name} • ${currentUser?.sellerStore || "Store Management"}`}
                 </h1>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-slate-100 text-slate-800">
-                  {currentUser?.role}
+                  {currentUser?.role === "admin" ? "SUPER ADMIN" : "SELLER"}
                 </span>
               </div>
               <div className="text-[11px] text-slate-500 font-medium">
@@ -635,6 +683,23 @@ export function AdminPortalPage() {
             <TrendingUp className="w-4 h-4" />
             <span>{currentUser?.role === "admin" ? "Marketplace Overview" : "Store Dashboard"}</span>
           </button>
+
+          {currentUser?.role === "admin" && (
+            <button
+              onClick={() => setActiveTab("team")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition-colors whitespace-nowrap ${
+                activeTab === "team"
+                  ? "bg-slate-950 text-white"
+                  : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Team & Sellers</span>
+              <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold">
+                {teamMembers.length}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab("restock")}
@@ -722,10 +787,10 @@ export function AdminPortalPage() {
 
                   <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
                     <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Active Seller Stores
+                      Active Team Sellers
                     </div>
                     <div className="text-2xl sm:text-3xl font-heading font-black text-slate-950 font-mono">
-                      {adminOverview.totalSellersCount}
+                      {teamMembers.length || adminOverview.totalSellersCount}
                     </div>
                   </div>
 
@@ -741,9 +806,22 @@ export function AdminPortalPage() {
 
                 {/* Sellers Financials */}
                 <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-                  <h3 className="font-heading font-bold text-lg text-slate-950">
-                    Sellers Financial Ledger & Payout Disbursements
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-heading font-bold text-lg text-slate-950">
+                        Sellers Financial Ledger & Balances
+                      </h3>
+                      <p className="text-xs text-slate-500">Live earnings breakdown per team member.</p>
+                    </div>
+
+                    <button
+                      onClick={() => setActiveTab("team")}
+                      className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1"
+                    >
+                      <span>Manage Team Members</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
@@ -751,7 +829,7 @@ export function AdminPortalPage() {
                         <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                           <th className="pb-3">Seller</th>
                           <th className="pb-3">Store Name</th>
-                          <th className="pb-3">Subaccount</th>
+                          <th className="pb-3">Category Specialty</th>
                           <th className="pb-3">Sales GMV</th>
                           <th className="pb-3">Available Balance</th>
                           <th className="pb-3 text-right">Action</th>
@@ -762,7 +840,7 @@ export function AdminPortalPage() {
                           <tr key={seller.id} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-4 font-bold text-slate-950">{seller.name}</td>
                             <td className="py-4 text-slate-700">{seller.storeName}</td>
-                            <td className="py-4 font-mono text-slate-600">{seller.paystackSubaccount}</td>
+                            <td className="py-4 text-slate-600">{seller.categorySpecialty}</td>
                             <td className="py-4 font-mono font-bold text-slate-900">
                               {formatPrice(seller.totalSalesGmvCents)}
                             </td>
@@ -829,6 +907,169 @@ export function AdminPortalPage() {
               </div>
             ) : (
               <div className="p-12 text-center text-slate-400">Loading data...</div>
+            )}
+          </div>
+        )}
+
+        {/* ─── TEAM & SELLERS MANAGEMENT TAB (SUPER ADMIN ONLY) ─── */}
+        {activeTab === "team" && currentUser?.role === "admin" && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="font-heading font-bold text-xl text-slate-950">Team & Sellers Management</h2>
+                <p className="text-xs text-slate-500">
+                  Add team members, assign category specialties, and provision seller credentials.
+                </p>
+              </div>
+
+              <button
+                onClick={() => openAddTeamModal()}
+                className="btn-primary text-xs py-2.5 px-4 flex items-center gap-2 rounded-xl shadow-xs"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add Team Member</span>
+              </button>
+            </div>
+
+            {teamMembers.length === 0 ? (
+              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+                <Users className="w-12 h-12 text-slate-300 mx-auto" />
+                <h3 className="font-bold text-slate-900 text-sm">No Team Members Added Yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Click the "Add Team Member" button above to register your first team member or seller.
+                </p>
+                <button
+                  onClick={() => openAddTeamModal()}
+                  className="btn-primary text-xs py-2 px-5 rounded-full inline-block mt-2"
+                >
+                  Add First Team Member
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teamMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between space-y-4 relative"
+                  >
+                    <div>
+                      {/* Top status */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-800">
+                          {member.memberRole || "Specialist"}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                            member.status === "active"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-rose-100 text-rose-800"
+                          }`}
+                        >
+                          {member.status}
+                        </span>
+                      </div>
+
+                      {/* Profile details */}
+                      <div className="flex items-center gap-3.5 mt-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-950 text-white font-bold text-base flex items-center justify-center font-heading shrink-0">
+                          {member.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-heading font-black text-sm text-slate-950 truncate">
+                            {member.name}
+                          </h3>
+                          <div className="text-xs text-slate-600 font-semibold truncate">
+                            {member.storeName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate">{member.email}</div>
+                        </div>
+                      </div>
+
+                      {/* Metrics & bank */}
+                      <div className="grid grid-cols-2 gap-2 mt-4 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-200/70">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Specialty
+                          </span>
+                          <span className="font-semibold text-slate-800 line-clamp-1">
+                            {member.categorySpecialty}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Platform Cut
+                          </span>
+                          <span className="font-mono font-bold text-slate-900">
+                            {Math.round((member.commissionRate || 0.05) * 100)}%
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Payout Bank
+                          </span>
+                          <span className="font-semibold text-slate-800 truncate block">
+                            {member.payoutBank || "MTN MoMo"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Payout Number
+                          </span>
+                          <span className="font-mono text-slate-700 truncate block">
+                            {member.payoutAccount || member.phone}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
+                      <button
+                        onClick={() => copyCredentials(member)}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1"
+                        title="Copy login details"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Login Info</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleToggleMemberStatus(member)}
+                          className={`p-1.5 rounded-lg ${
+                            member.status === "active"
+                              ? "text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              : "text-emerald-600 hover:bg-emerald-50"
+                          }`}
+                          title={member.status === "active" ? "Suspend Account" : "Activate Account"}
+                        >
+                          {member.status === "active" ? (
+                            <ToggleRight className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4 text-slate-400" />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => openAddTeamModal(member)}
+                          className="p-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-lg"
+                          title="Edit Profile"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteTeamMember(member)}
+                          className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg"
+                          title="Delete Member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -1098,6 +1339,169 @@ export function AdminPortalPage() {
           </div>
         )}
       </main>
+
+      {/* ─── ADD / EDIT TEAM MEMBER MODAL ─── */}
+      {isTeamModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-heading font-black text-base text-slate-950">
+                  {editingTeamMember ? `Edit Team Member: ${editingTeamMember.name}` : "Add Team Member / Seller"}
+                </h3>
+                <p className="text-xs text-slate-500">Provision dedicated store and seller dashboard access.</p>
+              </div>
+              <button onClick={() => setIsTeamModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-950">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTeamMember} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Full Legal Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={teamFormName}
+                    onChange={(e) => setTeamFormName(e.target.value)}
+                    placeholder="e.g. Kwame Mensah"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Address (Login)</label>
+                  <input
+                    type="email"
+                    required
+                    value={teamFormEmail}
+                    onChange={(e) => setTeamFormEmail(e.target.value)}
+                    placeholder="kwame.mensah@cyybrid.tech"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={teamFormPhone}
+                    onChange={(e) => setTeamFormPhone(e.target.value)}
+                    placeholder="+233 24 412 9902"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Store / Brand Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={teamFormStore}
+                    onChange={(e) => setTeamFormStore(e.target.value)}
+                    placeholder="e.g. Kicks & Soles Hub"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category Specialty</label>
+                  <select
+                    value={teamFormCategory}
+                    onChange={(e) => setTeamFormCategory(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950 font-semibold"
+                  >
+                    <option value="Footwear & Sneakers">Footwear & Sneakers</option>
+                    <option value="Watches & Horology">Watches & Horology</option>
+                    <option value="Streetwear & Apparel">Streetwear & Apparel</option>
+                    <option value="Electronics & Smart Tech">Electronics & Smart Tech</option>
+                    <option value="Leather Bags & Perfumes">Leather Bags & Perfumes</option>
+                    <option value="General Catalog">General Catalog</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Member Role Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={teamFormRole}
+                    onChange={(e) => setTeamFormRole(e.target.value)}
+                    placeholder="e.g. Footwear Lead"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Platform Commission (%)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={teamFormCommission}
+                    onChange={(e) => setTeamFormCommission(parseInt(e.target.value || "5", 10))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {editingTeamMember ? "Change Password (optional)" : "Initial Password"}
+                  </label>
+                  <input
+                    type="text"
+                    value={teamFormPassword}
+                    onChange={(e) => setTeamFormPassword(e.target.value)}
+                    placeholder={editingTeamMember ? "Leave blank to keep" : "seller"}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Payout Method / Bank</label>
+                  <select
+                    value={teamFormBank}
+                    onChange={(e) => setTeamFormBank(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
+                  >
+                    <option value="MTN Mobile Money">MTN Mobile Money</option>
+                    <option value="Telecel Cash">Telecel Cash</option>
+                    <option value="Access Bank Ghana">Access Bank Ghana</option>
+                    <option value="Ecobank Ghana">Ecobank Ghana</option>
+                    <option value="GCB Bank">GCB Bank</option>
+                    <option value="Stanbic Bank Ghana">Stanbic Bank Ghana</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Payout Account / MoMo No.</label>
+                  <input
+                    type="text"
+                    value={teamFormAccount}
+                    onChange={(e) => setTeamFormAccount(e.target.value)}
+                    placeholder="0244129902"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-slate-950"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button type="button" onClick={() => setIsTeamModalOpen(false)} className="px-4 py-2 font-bold text-slate-600">
+                  Cancel
+                </button>
+                <button type="submit" disabled={teamLoading} className="btn-primary py-2 px-5 font-bold">
+                  {teamLoading ? "Saving..." : editingTeamMember ? "Save Changes" : "Create Team Member"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* DELIVERY DISPATCH MODAL */}
       {editingDeliveryOrder && (
