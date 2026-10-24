@@ -262,7 +262,7 @@ export function ShopPage() {
 
           {/* Product Cards Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 animate-pulse">
                   <div className="aspect-square bg-slate-100 rounded-xl" />
@@ -289,7 +289,7 @@ export function ShopPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5">
               {sortedProducts.map((product) => (
                 <ProductCard
                   key={product.id}
