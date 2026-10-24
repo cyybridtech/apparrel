@@ -1,19 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ShieldCheck,
-  Truck,
-  RotateCcw,
-  CreditCard,
-  Lock,
-  ArrowRight,
-  CheckCircle2,
-  Gem,
-  Sparkles,
-  Globe2,
-  Store,
-  Building2,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Lock, Store } from "lucide-react";
 import { SecretAdminModal } from "./SecretAdminModal";
 import { useToast } from "../../context/ToastContext";
 
@@ -34,64 +21,9 @@ export function Footer() {
   return (
     <>
       <footer className="bg-white border-t border-slate-200 text-slate-600 mt-24">
-        {/* Luxury Pillars Row */}
-        <div className="border-b border-slate-100 bg-slate-50/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-900 shadow-sm shrink-0">
-                  <Truck className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">Ghana Express Dispatch</h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Live courier dispatch with Mapbox coordinate tracking in under 90 minutes.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-900 shadow-sm shrink-0">
-                  <Store className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">5 Curated Founding Stores</h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Footwear, Horology, Streetwear, Audio Tech & Artisan Leather by Cyybrid team leads.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-900 shadow-sm shrink-0">
-                  <CreditCard className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">Secure Checkout</h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Payment verification and seller settlement are being prepared. Checkout is not yet available.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-900 shadow-sm shrink-0">
-                  <RotateCcw className="w-5 h-5 text-slate-700" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">Complimentary Exchanges</h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    7-day seamless size swaps and concierge support across all catalog drops.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Main Footer Links */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Brand column */}
             <div className="lg:col-span-2 space-y-4">
               <Link to="/" className="inline-block">
@@ -114,40 +46,6 @@ export function Footer() {
                   <span>Seller Operations Hub</span>
                 </Link>
               </div>
-            </div>
-
-            {/* Department columns */}
-            <div className="space-y-3">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-heading">
-                Founding Stores
-              </h5>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <Link to="/shop?category=sneakers" className="hover:text-slate-950 transition-colors">
-                    Kicks & Soles Hub (Kwame)
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=watches" className="hover:text-slate-950 transition-colors">
-                    Chrono & Heritage (Ama)
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=tops" className="hover:text-slate-950 transition-colors">
-                    Cyybrid Atelier (Kofi)
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=tech" className="hover:text-slate-950 transition-colors">
-                    Volt Audio & Tech (Esi)
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=bags" className="hover:text-slate-950 transition-colors">
-                    Artisan Leather (Yaw)
-                  </Link>
-                </li>
-              </ul>
             </div>
 
             <div className="space-y-3">
