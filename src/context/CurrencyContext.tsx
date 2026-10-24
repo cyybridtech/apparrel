@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type CurrencyCode = "GHS" | "USD" | "EUR" | "GBP" | "NGN";
+export type SupportedCurrency = CurrencyCode;
 
 export interface CurrencyConfig {
   code: CurrencyCode;

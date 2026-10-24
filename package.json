@@ -4,12 +4,12 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
-    "dev:backend": "npx tsx src/server/index.ts",
+    "dev:backend": "tsx src/server/index.ts",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node src/server/index.ts",
-    "db:seed": "npx tsx src/db/seed-db.ts",
+    "server": "tsx src/server/index.ts",
+    "db:seed": "tsx src/db/seed-db.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -43,6 +43,7 @@
     "eslint": "9.39.4",
     "postcss": "8.5.8",
     "tailwindcss": "4.1.17",
+    "tsx": "^4.23.15",
     "typescript": "5.9.3"
   }
 }

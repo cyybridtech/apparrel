@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import crypto from "crypto";
 import {
   INITIAL_CATEGORIES,
@@ -11,9 +11,10 @@ import {
   InitialSeller,
   InitialUser,
 } from "../db/seed.js";
-import { pool, isDbConfigured } from "../db/index.js";
 
-dotenv.config();
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Production API startup is disabled until database persistence and verified checkout are implemented.");
+}
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -140,11 +141,50 @@ export interface SellerPayout {
 }
 
 // ─── Store & Cache Layer ───────────────────────────────────────
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const digest = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${digest}`;
+}
+
+function verifyPassword(password: string, encodedHash: string): boolean {
+  const [algorithm, salt, storedHex] = encodedHash.split("$");
+  if (algorithm !== "scrypt" || !salt || !storedHex || !/^[a-f0-9]{128}$/i.test(storedHex)) return false;
+  const stored = Buffer.from(storedHex, "hex");
+  const candidate = crypto.scryptSync(password, salt, stored.length);
+  return stored.length === candidate.length && crypto.timingSafeEqual(stored, candidate);
+}
+
 let memoryUsers: StoredUser[] = INITIAL_USERS.map((u) => ({
   ...u,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }));
+
+const bootstrapAdminEmail = process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
+const bootstrapAdminPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+if (process.env.NODE_ENV === "production" && (!bootstrapAdminEmail || !bootstrapAdminPassword)) {
+  throw new Error("Set ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD before starting the production API.");
+}
+if (bootstrapAdminEmail || bootstrapAdminPassword) {
+  if (!bootstrapAdminEmail || !bootstrapAdminPassword || bootstrapAdminPassword.length < 14) {
+    throw new Error("Admin bootstrap requires an email and a password of at least 14 characters.");
+  }
+  memoryUsers.push({
+    id: 1,
+    username: "admin",
+    name: "Cyybrid Platform Administrator",
+    email: bootstrapAdminEmail,
+    phone: "",
+    passwordHash: hashPassword(bootstrapAdminPassword),
+    role: "admin",
+    address: "",
+    city: "",
+    region: "Greater Accra",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+}
 
 let memorySellers: StoredSeller[] = INITIAL_SELLERS.map((s) => ({
   ...s,
@@ -181,7 +221,11 @@ let memoryAuditLogs: AuditLog[] = [
 let memoryPayouts: SellerPayout[] = [];
 
 // ─── Stateless Session Token Management ───────────────────────
-const SESSION_SECRET = process.env.SESSION_SECRET || "cyybrid_super_secure_master_secret_2026_ghana_commerce";
+const configuredSessionSecret = process.env.SESSION_SECRET;
+if (process.env.NODE_ENV === "production" && (!configuredSessionSecret || Buffer.byteLength(configuredSessionSecret) < 32)) {
+  throw new Error("Set SESSION_SECRET to a random value of at least 32 bytes before starting the production API.");
+}
+const SESSION_SECRET = configuredSessionSecret || crypto.randomBytes(32).toString("hex");
 
 interface SessionPayload {
   userId: number;
@@ -204,30 +248,22 @@ function createSessionToken(payload: Omit<SessionPayload, "exp">, durationMs = 1
 
 function verifySessionToken(token: string): SessionPayload | null {
   try {
-    if (token.startsWith("cyybrid.")) {
-      const parts = token.split(".");
-      if (parts.length === 3) {
-        const payloadStr = parts[1];
-        const signature = parts[2];
-        const expectedSignature = crypto.createHmac("sha256", SESSION_SECRET).update(payloadStr).digest("base64url");
-        if (signature === expectedSignature) {
-          const payload: SessionPayload = JSON.parse(Buffer.from(payloadStr, "base64url").toString("utf8"));
-          if (payload.exp && Date.now() < payload.exp) {
-            return payload;
-          }
-        }
-      }
+    const parts = token.split(".");
+    if (parts.length !== 3 || parts[0] !== "cyybrid") return null;
+    const [, payloadStr, signature] = parts;
+    const expectedSignature = crypto.createHmac("sha256", SESSION_SECRET).update(payloadStr).digest();
+    const actualSignature = Buffer.from(signature, "base64url");
+    if (actualSignature.length !== expectedSignature.length || !crypto.timingSafeEqual(actualSignature, expectedSignature)) {
+      return null;
     }
-
-    // Direct Super Admin Token Fallback
-    if (token.includes("admin")) {
-      return {
-        userId: 1,
-        role: "admin",
-        name: "Super Admin",
-        email: "admin@cyybrid.tech",
-        exp: Date.now() + 1000 * 60 * 60 * 24,
-      };
+    const payload: SessionPayload = JSON.parse(Buffer.from(payloadStr, "base64url").toString("utf8"));
+    const validRole = payload.role === "admin" || payload.role === "seller" || payload.role === "customer";
+    if (
+      Number.isInteger(payload.userId) && payload.userId > 0 && validRole &&
+      Number.isFinite(payload.exp) && Date.now() < payload.exp &&
+      typeof payload.name === "string" && typeof payload.email === "string"
+    ) {
+      return payload;
     }
   } catch (err) {
     console.error("Token verification error:", err);
@@ -300,6 +336,9 @@ function requireAdminOrSeller(req: Request, res: Response, next: NextFunction) {
     if (session.role !== "admin" && session.role !== "seller") {
       return res.status(403).json({ error: "Seller or Administrator authority required." });
     }
+    if (session.role === "seller" && memoryUsers.find((user) => user.id === session.userId)?.mustSetPassword) {
+      return res.status(403).json({ error: "Complete first-time security setup before using seller operations." });
+    }
     next();
   });
 }
@@ -311,54 +350,29 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   const { email, password, username, identifier: rawId } = req.body;
   const identifier = String(email || username || rawId || "").trim().toLowerCase();
 
-  if (!identifier || !password) {
+  if (!identifier || typeof password !== "string" || password.length === 0) {
     return res.status(400).json({ error: "Username/Email and password are required" });
   }
 
-  const cleanPassword = String(password).trim();
+  const cleanPassword = password;
 
   // Find user in memory by email or username
-  let user = memoryUsers.find(
+  const user = memoryUsers.find(
     (u) =>
       u.email.toLowerCase() === identifier ||
       (u.username && u.username.toLowerCase() === identifier)
   );
 
-  // Super Admin check
-  if (identifier === "admin@cyybrid.tech" || identifier === "admin") {
-    if (!user) {
-      user = {
-        id: 1,
-        username: "admin",
-        name: "Super Admin",
-        email: "admin@cyybrid.tech",
-        phone: "+233 24 555 0100",
-        password: "admin",
-        role: "admin",
-        address: "14 Independence Avenue, Airport Residential",
-        city: "Accra",
-        region: "Greater Accra",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      memoryUsers.unshift(user);
-    }
-  }
-
-  // Password matching
-  const isMatch =
-    user &&
-    (user.password === cleanPassword ||
-      (user.username && cleanPassword === user.username) ||
-      cleanPassword === "admin" ||
-      cleanPassword === "admin123" ||
-      cleanPassword === "cyybrid2026");
+  const isMatch = user && verifyPassword(cleanPassword, user.passwordHash);
 
   if (!user || !isMatch) {
     return res.status(401).json({ error: "Invalid username, email, or password. Please check your credentials." });
   }
 
   const sellerProfile = user.sellerId ? memorySellers.find((s) => s.id === user.sellerId) : undefined;
+  if (user.role === "seller" && sellerProfile?.status !== "active") {
+    return res.status(403).json({ error: "This seller account is not active. Contact Cyybrid support." });
+  }
 
   const token = createSessionToken({
     userId: user.id,
@@ -398,11 +412,11 @@ app.post("/api/auth/complete-security-setup", authenticateSession, (req: Request
     const session = (req as any).userSession;
     const { email, password, phone } = req.body;
 
-    if (!email || !email.includes("@")) {
+    if (typeof email !== "string" || !email.includes("@")) {
       return res.status(400).json({ error: "Please provide a valid permanent email address." });
     }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: "New password must be at least 6 characters long." });
+    if (typeof password !== "string" || password.length < 12) {
+      return res.status(400).json({ error: "New password must be at least 12 characters long." });
     }
 
     const user = memoryUsers.find((u) => u.id === session.userId);
@@ -419,7 +433,7 @@ app.post("/api/auth/complete-security-setup", authenticateSession, (req: Request
     }
 
     user.email = cleanEmail;
-    user.password = String(password).trim();
+    user.passwordHash = hashPassword(password);
     if (phone) user.phone = String(phone).trim();
     user.mustSetPassword = false;
     user.updatedAt = new Date().toISOString();
@@ -486,8 +500,8 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
   if (!phone || phone.trim().length < 7) {
     return res.status(400).json({ error: "Please enter a valid Ghanaian phone number." });
   }
-  if (!password || password.length < 5) {
-    return res.status(400).json({ error: "Password must be at least 5 characters long." });
+  if (typeof password !== "string" || password.length < 12) {
+    return res.status(400).json({ error: "Password must be at least 12 characters long." });
   }
 
   const cleanEmail = email.trim().toLowerCase();
@@ -503,7 +517,7 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
     name: name.trim(),
     email: cleanEmail,
     phone: phone.trim(),
-    password: password.trim(),
+    passwordHash: hashPassword(password),
     role: "customer",
     address: address?.trim() || "Accra",
     city: city?.trim() || "Accra",
@@ -697,138 +711,16 @@ app.get("/api/products/:slug", (req: Request, res: Response) => {
 
 // ─── Orders, Checkout & Delivery Management ─────────────────────
 
-// Create Multi-Seller Order
-app.post("/api/orders", (req: Request, res: Response) => {
-  const {
-    customerName,
-    email,
-    phone,
-    address,
-    city = "Accra",
-    region = "Greater Accra",
-    postalCode,
-    items,
-    subtotalCents,
-    shippingCents = 0,
-    discountCents = 0,
-    totalCents,
-    currency = "GHS",
-    paymentMethod = "paystack",
-    paystackRef,
-    deliveryNotes,
-    destinationLat,
-    destinationLng,
-  } = req.body;
-
-  if (!customerName || !email || !phone || !address || !items || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "Missing required order, recipient or address details." });
-  }
-
-  const orderId = memoryOrders.length + 1;
-  const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-  const orderNo = `ORD-${randomSuffix}`;
-  const trackingCode = `TRK-${randomSuffix}-GH`;
-
-  const processedItems: StoredOrderItem[] = items.map((item: any) => {
-    const prod = memoryProducts.find((p) => p.id === item.productId || p.slug === item.slug);
-    const sellerId = prod?.sellerId || item.sellerId || 1;
-    const seller = memorySellers.find((s) => s.id === sellerId);
-
-    const unitPriceCents = Number(item.unitPriceCents || prod?.priceCents || 0);
-    const qty = Number(item.qty || 1);
-    const lineTotal = unitPriceCents * qty;
-
-    const commissionRate = seller?.commissionRate ?? 0.05;
-    const platformShareCents = Math.round(lineTotal * commissionRate);
-    const sellerShareCents = lineTotal - platformShareCents;
-
-    // Credit seller balance
-    if (seller) {
-      seller.balanceCents += sellerShareCents;
-      seller.updatedAt = new Date().toISOString();
-    }
-
-    // Decrement stock in product size
-    if (prod) {
-      const sizeObj = prod.sizes.find(
-        (s) => s.label.toLowerCase() === (item.sizeLabel || "").toLowerCase()
-      );
-      if (sizeObj) {
-        sizeObj.stock = Math.max(0, sizeObj.stock - qty);
-      }
-      syncProductTotalStock(prod);
-    }
-
-    return {
-      productId: prod?.id || item.productId || 0,
-      sellerId,
-      sellerStore: seller?.storeName || "Cyybrid Store",
-      name: item.name || prod?.name || "Exclusive Item",
-      brand: item.brand || prod?.brand || "CYYBRID",
-      category: item.category || prod?.category || "general",
-      sizeLabel: item.sizeLabel || "Standard",
-      image: item.image || prod?.primaryImage || "",
-      qty,
-      unitPriceCents,
-      sellerShareCents,
-      platformShareCents,
-    };
-  });
-
-  const newOrder: StoredOrder = {
-    id: orderId,
-    orderNo,
-    customerName,
-    email,
-    phone,
-    address,
-    city,
-    region,
-    postalCode,
-    subtotalCents: Number(subtotalCents || totalCents),
-    shippingCents: Number(shippingCents || 0),
-    discountCents: Number(discountCents || 0),
-    totalCents: Number(totalCents),
-    currency,
-    status: "confirmed",
-    paymentStatus: "paid",
-    paymentMethod,
-    paystackRef: paystackRef || `PSTK_${Date.now()}`,
-    trackingCode,
-    courierName: "Cyybrid Express Fleet",
-    courierPhone: "+233 24 555 8901",
-    courierVehicle: "Motorbike Dispatch #GH-412",
-    courierLat: 5.6037,
-    courierLng: -0.187,
-    destinationLat: destinationLat || 5.6148,
-    destinationLng: destinationLng || -0.1731,
-    estimatedDelivery: "45 - 90 mins (Live Dispatch)",
-    deliveryNotes: deliveryNotes || "Leave at designated address.",
-    items: processedItems,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  memoryOrders.unshift(newOrder);
-
-  addAuditLog(
-    customerName,
-    "customer",
-    "Order Placed",
-    orderNo,
-    `Order of GH₵ ${(totalCents / 100).toFixed(2)} confirmed. Tracking: ${trackingCode}`
-  );
-
-  res.status(201).json({
-    success: true,
-    message: "Order placed successfully",
-    order: newOrder,
+// Order creation is intentionally disabled until verified payment and persistent storage exist.
+app.post("/api/orders", (_req: Request, res: Response) => {
+  return res.status(503).json({
+    error: "Order placement is temporarily unavailable until payment verification and persistent database storage are implemented.",
   });
 });
 
 // Order Tracking by Tracking Code or Order Number
 app.get("/api/orders/:code", (req: Request, res: Response) => {
-  const { code } = req.params;
+  const code = String(req.params.code);
   const order = memoryOrders.find(
     (o) =>
       o.trackingCode.toLowerCase() === code.toLowerCase() ||
@@ -879,69 +771,17 @@ app.patch("/api/orders/:id/delivery", requireAdminOrSeller, (req: Request, res: 
 // ─── Paystack Gateway ───────────────────────────────────────────
 
 app.get("/api/paystack/config", (_req: Request, res: Response) => {
-  const publicKey =
-    process.env.PAYSTACK_PUBLIC_KEY || "pk_test_d34199c927d7e82b7931cb923ad04a8b7ef14e59";
   res.json({
     success: true,
-    publicKey,
+    publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
     currency: "GHS",
   });
 });
 
 app.post("/api/paystack/initialize", async (req: Request, res: Response) => {
-  const { email, amount, metadata, callback_url } = req.body;
-
-  if (!email || !amount) {
-    return res.status(400).json({ error: "Email and amount are required" });
-  }
-
-  const secretKey =
-    process.env.PAYSTACK_SECRET_KEY || "sk_test_66bebc63b827e69622d10f274cbcf6c5478461ab";
-
-  try {
-    const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        amount,
-        currency: "GHS",
-        metadata: {
-          ...metadata,
-          platform: "Cyybrid Marketplace",
-        },
-        callback_url: callback_url || "http://localhost:5173/track",
-      }),
-    });
-
-    const data: any = await paystackRes.json();
-    if (!data.status) {
-      const fallbackRef = `CYYBRID_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      return res.json({
-        success: true,
-        data: {
-          authorization_url: `https://checkout.paystack.com/simulate?ref=${fallbackRef}`,
-          access_code: fallbackRef,
-          reference: fallbackRef,
-        },
-      });
-    }
-
-    res.json({ success: true, data: data.data });
-  } catch (err) {
-    const fallbackRef = `CYYBRID_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    res.json({
-      success: true,
-      data: {
-        authorization_url: `https://checkout.paystack.com/simulate?ref=${fallbackRef}`,
-        access_code: fallbackRef,
-        reference: fallbackRef,
-      },
-    });
-  }
+  return res.status(503).json({
+    error: "Payment initialization is disabled until transaction verification and order persistence are implemented.",
+  });
 });
 
 // ─── Seller & Admin Dashboard Operations ────────────────────────
@@ -1265,7 +1105,7 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
 
     const cleanUsername = String(username || email.split("@")[0]).trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
     const cleanEmail = email ? String(email).trim().toLowerCase() : `${cleanUsername}@cyybrid.internal`;
-    const cleanPassword = cleanUsername; // Initial temporary password is the username itself!
+    const temporaryPassword = crypto.randomBytes(24).toString("base64url");
 
     // Check if user or username already exists
     const existingUser = memoryUsers.find(
@@ -1312,7 +1152,7 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
       name: name.trim(),
       email: cleanEmail,
       phone: phone?.trim() || "+233 24 000 0000",
-      password: cleanPassword,
+      passwordHash: hashPassword(temporaryPassword),
       role: "seller",
       sellerId,
       mustSetPassword: true,
@@ -1335,7 +1175,8 @@ app.post("/api/admin/team", requireAdmin, (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: `Team member ${name} created. Temporary login: Username "${cleanUsername}", Password "${cleanUsername}".`,
+      message: `Team member ${name} created. Share the one-time password securely; it will not be shown again.`,
+      temporaryPassword,
       seller: newSeller,
       user: {
         id: newUser.id,
@@ -1395,7 +1236,10 @@ app.put("/api/admin/team/:id", requireAdmin, (req: Request, res: Response) => {
     if (userAccount) {
       if (name) userAccount.name = name.trim();
       if (phone) userAccount.phone = phone.trim();
-      if (password) userAccount.password = String(password).trim();
+      if (typeof password === "string" && password.length >= 12) {
+        userAccount.passwordHash = hashPassword(password);
+        userAccount.mustSetPassword = true;
+      }
       userAccount.updatedAt = new Date().toISOString();
     }
 

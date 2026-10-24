@@ -15,6 +15,7 @@ export interface UserAddress {
 
 export interface UserProfile extends User {
   addresses?: UserAddress[];
+  rewardPoints?: number;
 }
 
 interface AuthContextType {
@@ -39,6 +40,10 @@ interface AuthContextType {
   }) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
+  addAddress: (address: Omit<UserAddress, "id">) => void;
+  removeAddress: (id: string) => void;
+  setDefaultAddress: (id: string) => void;
+  addRewardPoints: (points: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((fetched) => {
           if (fetched) {
             setUser((prev) => ({ ...(prev || {}), ...fetched }));
+          } else {
+            setUser(null);
           }
         })
         .catch(() => {});
@@ -133,8 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error("Invalid Phone", "Please provide a valid phone number.");
       return false;
     }
-    if (!data.password || data.password.length < 5) {
-      error("Weak Password", "Password must be at least 5 characters.");
+    if (!data.password || data.password.length < 12) {
+      error("Weak Password", "Password must be at least 12 characters.");
       return false;
     }
 
@@ -168,6 +175,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     success("Profile Updated", "Your account settings have been saved.");
   };
 
+  const addAddress = (address: Omit<UserAddress, "id">) => {
+    if (!user) return;
+    const addresses = user.addresses || [];
+    const isDefault = address.isDefault || addresses.length === 0;
+    const nextAddress: UserAddress = {
+      ...address,
+      id: globalThis.crypto?.randomUUID?.() || `address-${Date.now()}`,
+      isDefault,
+    };
+    setUser({
+      ...user,
+      addresses: [
+        ...addresses.map((item) => ({ ...item, isDefault: isDefault ? false : item.isDefault })),
+        nextAddress,
+      ],
+    });
+  };
+
+  const removeAddress = (id: string) => {
+    if (!user) return;
+    const addresses = (user.addresses || []).filter((address) => address.id !== id);
+    if (!addresses.some((address) => address.isDefault) && addresses.length > 0) {
+      addresses[0] = { ...addresses[0], isDefault: true };
+    }
+    setUser({ ...user, addresses });
+  };
+
+  const setDefaultAddress = (id: string) => {
+    if (!user) return;
+    setUser({
+      ...user,
+      addresses: (user.addresses || []).map((address) => ({ ...address, isDefault: address.id === id })),
+    });
+  };
+
+  const addRewardPoints = (points: number) => {
+    if (!user || !Number.isFinite(points) || points <= 0) return;
+    setUser({ ...user, rewardPoints: (user.rewardPoints || 0) + Math.floor(points) });
+  };
+
   const role = user?.role || "customer";
 
   return (
@@ -186,6 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateProfile,
+        addAddress,
+        removeAddress,
+        setDefaultAddress,
+        addRewardPoints,
       }}
     >
       {children}

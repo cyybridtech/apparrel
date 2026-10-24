@@ -42,23 +42,16 @@ const getPoolConfig = (): mysql.PoolOptions => {
       connectTimeout: 20000,
     };
 
-    // Ensure ssl is ALWAYS an object, never a boolean
-    if (sslCa) {
-      poolConfig.ssl = { ca: sslCa, rejectUnauthorized: true };
-    } else {
-      // TiDB Cloud / AWS / PlanetScale require SSL object
-      poolConfig.ssl = { minVersion: "TLSv1.2", rejectUnauthorized: false };
-    }
+    poolConfig.ssl = {
+      minVersion: "TLSv1.2",
+      rejectUnauthorized: true,
+      ...(sslCa ? { ca: sslCa } : {}),
+    };
 
     return poolConfig;
   } catch (err) {
-    console.error("Failed to parse DATABASE_URL:", err);
-    return {
-      host: "127.0.0.1",
-      user: "root",
-      database: "footwear",
-      ssl: { minVersion: "TLSv1.2", rejectUnauthorized: false },
-    };
+    console.error("Failed to parse DATABASE_URL; refusing insecure fallback.");
+    throw err;
   }
 };
 

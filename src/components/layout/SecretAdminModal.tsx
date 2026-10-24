@@ -20,7 +20,7 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
 
   const handleSubmit = async (e?: React.FormEvent, bypassPin?: string) => {
     if (e) e.preventDefault();
-    const pinToUse = (bypassPin || pin).trim();
+    const pinToUse = bypassPin || pin;
     if (!pinToUse) return;
 
     setLoading(true);
@@ -35,8 +35,8 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
         onClose();
         navigate("/admin");
       } else {
-        setErrorMsg("Invalid secret PIN. Please check your administrator passkey.");
-        error("Access Denied", "Incorrect Admin Passkey");
+        setErrorMsg("Invalid administrator credentials. Please check your account password.");
+        error("Access Denied", "Administrator sign-in failed");
       }
     } catch {
       setErrorMsg("Verification request failed. Server unreachable.");
@@ -69,7 +69,7 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
         <form onSubmit={(e) => handleSubmit(e)} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Enter Secret Passkey / PIN
+              Administrator Password
             </label>
             <div className="relative">
               <KeyRound className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -77,7 +77,7 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
                 type="password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter Administrator Passkey"
+                placeholder="Enter your administrator password"
                 autoFocus
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all font-mono"
               />
@@ -89,7 +89,7 @@ export function SecretAdminModal({ isOpen, onClose }: SecretAdminModalProps) {
               </div>
             )}
             <p className="text-[11px] text-slate-400 mt-2">
-              Configured via <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">ADMIN_SECRET_KEY</code> in your environment.
+              Sign in using the administrator account configured for this environment.
             </p>
           </div>
 

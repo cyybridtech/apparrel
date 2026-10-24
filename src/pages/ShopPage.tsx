@@ -208,7 +208,7 @@ export function ShopPage() {
             priceRange={priceRange}
             maxPrice={maxPrice}
             onPriceChange={setPriceRange}
-            onResetFilters={handleResetFilters}
+            onReset={handleResetFilters}
           />
         </div>
 
@@ -306,7 +306,6 @@ export function ShopPage() {
       {quickViewProduct && (
         <QuickViewModal
           product={quickViewProduct}
-          isOpen={Boolean(quickViewProduct)}
           onClose={() => setQuickViewProduct(null)}
         />
       )}
@@ -328,7 +327,7 @@ export function ShopPage() {
               priceRange={priceRange}
               maxPrice={maxPrice}
               onPriceChange={setPriceRange}
-              onResetFilters={() => {
+              onReset={() => {
                 handleResetFilters();
                 setMobileFilterOpen(false);
               }}

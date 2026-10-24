@@ -271,7 +271,7 @@ export function CartDrawer() {
                   onClick={openCheckout}
                   className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 text-xs font-bold shadow-md shadow-slate-950/10"
                 >
-                  <span>Proceed to Paystack Checkout</span>
+                  <span>Continue to Checkout</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
@@ -296,7 +296,7 @@ export function CartDrawer() {
               <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 font-medium pt-1">
                 <span className="flex items-center gap-1">
                   <CreditCard className="w-3 h-3" />
-                  MoMo & Card Split Settlement
+                  Secure checkout is being prepared
                 </span>
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-emerald-500" />

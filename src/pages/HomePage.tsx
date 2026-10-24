@@ -116,16 +116,16 @@ export function HomePage() {
               {/* Quick Trust Pillars */}
               <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-4 text-slate-600 text-xs">
                 <div>
-                  <strong className="block font-heading font-black text-slate-950 text-base">5 Stores</strong>
-                  <span className="text-[11px] text-slate-400">Curated Vendor Nodes</span>
+                  <strong className="block font-heading font-black text-slate-950 text-base">Seller Stores</strong>
+                  <span className="text-[11px] text-slate-400">Managed by Cyybrid</span>
                 </div>
                 <div>
-                  <strong className="block font-heading font-black text-slate-950 text-base">Paystack</strong>
-                  <span className="text-[11px] text-slate-400">Instant Split Settlement</span>
+                  <strong className="block font-heading font-black text-slate-950 text-base">Checkout</strong>
+                  <span className="text-[11px] text-slate-400">Secure setup in progress</span>
                 </div>
                 <div>
-                  <strong className="block font-heading font-black text-slate-950 text-base">&lt; 90m</strong>
-                  <span className="text-[11px] text-slate-400">Express Courier Delivery</span>
+                  <strong className="block font-heading font-black text-slate-950 text-base">Delivery</strong>
+                  <span className="text-[11px] text-slate-400">Options in development</span>
                 </div>
               </div>
             </div>
@@ -272,7 +272,6 @@ export function HomePage() {
       {quickViewProduct && (
         <QuickViewModal
           product={quickViewProduct}
-          isOpen={Boolean(quickViewProduct)}
           onClose={() => setQuickViewProduct(null)}
         />
       )}

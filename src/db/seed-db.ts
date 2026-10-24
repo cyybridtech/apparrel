@@ -1,16 +1,24 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import { pool, db } from "./index.js";
 import { categories, products, productSizes, inventoryLogs } from "./schema.js";
 import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from "./seed.js";
-
-dotenv.config();
 
 async function runSeed() {
   console.log("⚡ Starting database sync to MySQL / TiDB Cloud...");
 
   if (!process.env.DATABASE_URL) {
-    console.warn("⚠️ DATABASE_URL is not set in .env. Using in-memory fallback.");
-    process.exit(0);
+    console.warn("⚠️ DATABASE_URL is not set. No seed data was written.");
+    return;
+  }
+  if (process.env.NODE_ENV === "production" || process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("The legacy demo seeder is disabled by default. Use a reviewed migration for persistent data.");
+  }
+  const databaseHost = new URL(process.env.DATABASE_URL).hostname;
+  if (databaseHost !== "localhost" && databaseHost !== "127.0.0.1") {
+    throw new Error("The demo seeder only supports a local database; it will not connect to TiDB or remote MySQL.");
+  }
+  if (!pool) {
+    throw new Error("DATABASE_URL is set but the database pool was not initialized.");
   }
 
   try {

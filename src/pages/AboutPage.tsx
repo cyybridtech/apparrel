@@ -26,10 +26,10 @@ export const AboutPage: React.FC = () => {
             Cyybrid Technology Marketplace
           </span>
           <h1 className="text-4xl sm:text-6xl font-black font-heading tracking-tight leading-[1.12] text-slate-950 mb-6">
-            Pioneering Multi-Seller Commerce in Ghana
+            Building Cyybrid's Seller Marketplace
           </h1>
           <p className="text-base sm:text-xl text-slate-600 font-normal leading-relaxed max-w-2xl mx-auto">
-            A unified digital marketplace powered by Cyybrid Technology, connecting customers to authenticated founding member stores with automated Paystack split settlement.
+            Cyybrid Technology is building a shared online store where organization members can manage their own products, sales, inventory, and delivery workflows.
           </p>
         </div>
       </div>
@@ -42,28 +42,28 @@ export const AboutPage: React.FC = () => {
               The Cyybrid Vision
             </span>
             <h2 className="text-3xl sm:text-4xl font-black font-heading text-slate-950 leading-snug">
-              One unified shopping experience, five specialized vendor guilds.
+              One organization. Independent seller workspaces.
             </h2>
             <p className="text-slate-600 leading-relaxed font-normal text-sm sm:text-base">
-              Cyybrid Marketplace was architected from the ground up to solve multi-seller commerce in West Africa. Customers experience one cohesive luxury shopping bag and single Paystack checkout, while our backend ensures strict data isolation, real-time split attribution, and automated payouts for every seller node.
+              The first stage is an organization-led marketplace: Cyybrid administrators invite members, members manage their own catalogs, and the organization controls onboarding and oversight. Public seller onboarding can be added later.
             </p>
             <p className="text-slate-600 leading-relaxed font-normal text-sm sm:text-base">
-              From retro high-heat footwear and precision automatic horology to heavyweight loopback French terry and titanium audio engineering, each founding member operates an independent authenticated specialty store.
+              Seller dashboards, inventory, order operations, payment verification, and persistent database storage are being implemented before the marketplace is opened for live commerce.
             </p>
             <div className="pt-4 flex items-center gap-8 border-t border-slate-200">
               <div>
-                <p className="text-3xl font-black font-heading text-slate-950">5</p>
-                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Founding Stores</p>
+                <p className="text-3xl font-black font-heading text-slate-950">Cyybrid</p>
+                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Organization Owner</p>
               </div>
               <div className="h-10 w-[1px] bg-slate-200" />
               <div>
-                <p className="text-3xl font-black font-heading text-slate-950">100%</p>
-                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Paystack Split MoMo</p>
+                <p className="text-3xl font-black font-heading text-slate-950">Invited</p>
+                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Seller Onboarding</p>
               </div>
               <div className="h-10 w-[1px] bg-slate-200" />
               <div>
-                <p className="text-3xl font-black font-heading text-slate-950">&lt; 90m</p>
-                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Courier Dispatch</p>
+                <p className="text-3xl font-black font-heading text-slate-950">In Progress</p>
+                <p className="text-xs font-mono text-slate-500 uppercase tracking-wider mt-1">Platform Build</p>
               </div>
             </div>
           </div>
@@ -98,9 +98,9 @@ export const AboutPage: React.FC = () => {
               <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-900 shadow-sm">
                 <Store className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-lg font-bold text-slate-950 font-heading">Data-Isolated Seller Nodes</h3>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">Seller Workspaces (In Development)</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Every seller operates inside a secure environment where products, variant matrices, and financial ledgers are isolated and encrypted.
+                Seller-scoped access and product management are part of the target design. Live database-backed isolation must be completed and tested before launch.
               </p>
             </div>
 
@@ -108,9 +108,9 @@ export const AboutPage: React.FC = () => {
               <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-900 shadow-sm">
                 <CreditCard className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="text-lg font-bold text-slate-950 font-heading">Automated Split Settlements</h3>
+              <h3 className="text-lg font-bold text-slate-950 font-heading">Payments & Settlement (Planned)</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Paystack subaccounts automatically distribute 95% net revenue to sellers and 5% company platform share with transparent audit trails.
+                Checkout is paused. Transaction verification, webhook handling, order persistence, and seller payout rules are not active yet.
               </p>
             </div>
 

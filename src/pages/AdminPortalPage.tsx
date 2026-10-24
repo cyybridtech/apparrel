@@ -65,6 +65,7 @@ import {
   deleteAdminTeamMember,
   completeSecuritySetup,
   authLogin,
+  fetchCurrentUser,
   Product,
   Order,
   SellerAnalytics,
@@ -96,14 +97,11 @@ export function AdminPortalPage() {
     } catch {}
     return null;
   });
-
-  const [sessionRole, setSessionRole] = useState<"admin" | "seller">(() => {
-    return (localStorage.getItem("cyybrid_role") as any) || "admin";
-  });
+  const [sessionVerified, setSessionVerified] = useState(false);
 
   // Login form state (Accepts Username or Email)
-  const [loginEmail, setLoginEmail] = useState("admin");
-  const [loginPass, setLoginPass] = useState("admin");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -185,7 +183,7 @@ export function AdminPortalPage() {
 
   const { success, error, info } = useToast();
 
-  const isAuthenticated = Boolean(currentUser && (currentUser.role === "admin" || currentUser.role === "seller"));
+  const isAuthenticated = Boolean(sessionVerified && currentUser && (currentUser.role === "admin" || currentUser.role === "seller"));
 
   const loadPortalData = async () => {
     if (!currentUser) return;
@@ -227,10 +225,39 @@ export function AdminPortalPage() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (sessionVerified && isAuthenticated) {
       loadPortalData();
     }
-  }, [currentUser]);
+  }, [currentUser, sessionVerified]);
+
+  useEffect(() => {
+    let mounted = true;
+    const token = localStorage.getItem("cyybrid_session_token");
+    if (!token) {
+      setCurrentUser(null);
+      setSessionVerified(true);
+      return () => {
+        mounted = false;
+      };
+    }
+    fetchCurrentUser()
+      .then((user) => {
+        if (!mounted) return;
+        if (user && (user.role === "admin" || user.role === "seller")) {
+          setCurrentUser(user);
+          localStorage.setItem("cyybrid_user", JSON.stringify(user));
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem("cyybrid_user");
+        }
+      })
+      .finally(() => {
+        if (mounted) setSessionVerified(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleLoginSubmit = async () => {
     if (!loginEmail || !loginPass) {
@@ -249,7 +276,6 @@ export function AdminPortalPage() {
           return;
         }
         setCurrentUser(res.user);
-        setSessionRole(res.user.role as any);
         success("Access Granted", `Welcome back, ${res.user.name}.`);
       }
     } catch (err: any) {
@@ -318,7 +344,6 @@ export function AdminPortalPage() {
         commissionRate: teamFormCommission / 100,
         payoutBank: teamFormBank,
         payoutAccount: teamFormAccount.trim() || "0240000000",
-        password: cleanUsername,
       };
 
       if (editingTeamMember) {
@@ -331,10 +356,18 @@ export function AdminPortalPage() {
       } else {
         const res = await addAdminTeamMember(payload);
         if (res.success) {
-          success(
-            "Team Member Added",
-            `${teamFormName} provisioned with temporary login: Username "${cleanUsername}", Password "${cleanUsername}".`
-          );
+          if (typeof res.temporaryPassword === "string") {
+            const credentials = `CYYBRID SELLER ONBOARDING\nPortal: /admin\nUsername: ${cleanUsername}\nTemporary password: ${res.temporaryPassword}\nStore: ${payload.storeName}\n\nRequire the seller to set a private password on first sign-in.`;
+            try {
+              if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(credentials);
+              else window.prompt("Copy the one-time seller credentials and share them privately:", credentials);
+            } catch {
+              window.prompt("Copy the one-time seller credentials and share them privately:", credentials);
+            }
+            success("Team Member Added", "One-time credentials copied. Share them privately; the seller must change the password at first sign-in.");
+          } else {
+            error("Credential Setup Failed", "The seller was created, but the server did not return a one-time password. Reset the credential before sharing access.");
+          }
           setIsTeamModalOpen(false);
           loadPortalData();
         }
@@ -376,7 +409,7 @@ export function AdminPortalPage() {
 
   const copyCredentials = (member: TeamMember) => {
     const un = member.username || member.name.toLowerCase().replace(/[^a-z0-9_]/g, "");
-    const text = `CYYBRID SELLER ONBOARDING CREDENTIALS\nPortal: /admin\nUsername: ${un}\nTemporary Password: ${un}\nStore: ${member.storeName}\n\nNote: On first login, you will be prompted to set your personal email and private password.`;
+    const text = `CYYBRID SELLER LOGIN\nPortal: /admin\nUsername: ${un}\nStore: ${member.storeName}\n\nTemporary passwords are only shown once when an account is created. Contact the administrator to reset access.`;
     navigator.clipboard.writeText(text);
     success("Copied to Clipboard", `Login credentials for ${member.name} (@${un}) copied.`);
   };
@@ -389,8 +422,8 @@ export function AdminPortalPage() {
       setSecError("Please enter a valid official email address.");
       return;
     }
-    if (!secPassword || secPassword.length < 6) {
-      setSecError("New secure password must be at least 6 characters long.");
+    if (!secPassword || secPassword.length < 12) {
+      setSecError("New secure password must be at least 12 characters long.");
       return;
     }
     if (secPassword !== secConfirmPassword) {

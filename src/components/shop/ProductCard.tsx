@@ -102,6 +102,7 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
                 category: product.category,
                 priceCents: product.priceCents,
                 image: primaryImg,
+                rating: product.rating,
               });
             }}
             className={`p-2.5 rounded-full backdrop-blur-md shadow-md transition-all ${

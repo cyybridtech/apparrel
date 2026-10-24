@@ -67,9 +67,9 @@ export function Footer() {
                   <CreditCard className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">Paystack Split Settlement</h4>
+                  <h4 className="text-sm font-bold text-slate-900 font-heading">Secure Checkout</h4>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    MTN Mobile Money, Telecel Cash & Cards with automated subaccount distribution.
+                    Payment verification and seller settlement are being prepared. Checkout is not yet available.
                   </p>
                 </div>
               </div>

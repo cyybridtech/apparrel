@@ -4,7 +4,7 @@ export interface InitialUser {
   name: string;
   email: string;
   phone: string;
-  password: string; // Plaintext for demo seed / hashed on login
+  passwordHash: string;
   role: "admin" | "seller" | "customer";
   sellerId?: number;
   mustSetPassword?: boolean;
@@ -60,20 +60,9 @@ export interface InitialProduct {
   sizes: { label: string; stock: number }[];
 }
 
-export const INITIAL_USERS: InitialUser[] = [
-  {
-    id: 1,
-    username: "admin",
-    name: "Cyybrid Platform Super Admin",
-    email: "admin@cyybrid.tech",
-    phone: "+233 24 555 0100",
-    password: "admin",
-    role: "admin",
-    address: "14 Independence Avenue, Airport Residential",
-    city: "Accra",
-    region: "Greater Accra",
-  },
-];
+// No privileged account is seeded. Configure ADMIN_BOOTSTRAP_EMAIL and
+// ADMIN_BOOTSTRAP_PASSWORD to provision the first administrator securely.
+export const INITIAL_USERS: InitialUser[] = [];
 
 export const INITIAL_SELLERS: InitialSeller[] = [];
 

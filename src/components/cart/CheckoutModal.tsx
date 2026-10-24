@@ -18,23 +18,12 @@ import {
   Sparkles,
   Loader2
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { useCart } from "../../context/CartContext";
 import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useAuth } from "../../context/AuthContext";
-import { createOrder, fetchPaystackConfig, Order } from "../../lib/api";
+import { Order } from "../../lib/api";
 import { LocationPickerModal } from "../checkout/LocationPickerModal";
-
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup: (options: any) => {
-        openIframe: () => void;
-      };
-    };
-  }
-}
 
 export function CheckoutModal() {
   const {
@@ -45,23 +34,20 @@ export function CheckoutModal() {
     shippingCents,
     discountCents,
     totalCents,
-    clearCart,
   } = useCart();
   const { formatPrice } = useCurrency();
-  const { user, addRewardPoints, isAuthenticated, openAuthModal } = useAuth();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
-    name: user?.name || "Kofi Mensah",
-    email: user?.email || "kofi.mensah@example.com",
-    phone: user?.phone || "+233 24 412 9902",
-    address: user?.addresses?.[0]?.street || "14 Independence Avenue, Airport Residential",
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.addresses?.[0]?.street || "",
     city: user?.addresses?.[0]?.city || "Accra",
     region: user?.addresses?.[0]?.region || "Greater Accra",
-    deliveryNotes: "Call when at security gate",
+    deliveryNotes: "",
   });
 
-  const [paystackKey, setPaystackKey] = useState("");
-  const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
 
@@ -82,14 +68,6 @@ export function CheckoutModal() {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchPaystackConfig()
-      .then((cfg) => {
-        if (cfg?.publicKey) setPaystackKey(cfg.publicKey);
-      })
-      .catch(() => {});
-  }, []);
-
   if (!isCheckoutOpen) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -106,133 +84,9 @@ export function CheckoutModal() {
     success("Location Verified", `${loc.address} pinned for courier delivery.`);
   };
 
-  const executeOrderCreation = async (paystackRef?: string) => {
-    setLoading(true);
-    try {
-      const orderPayload = {
-        customerName: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        region: formData.region,
-        subtotalCents,
-        shippingCents,
-        discountCents,
-        totalCents,
-        currency: "GHS",
-        paystackRef: paystackRef || `PSTK_LIVE_${Date.now()}`,
-        paymentMethod: "paystack",
-        deliveryNotes: formData.deliveryNotes,
-        items: cart.map((item) => ({
-          productId: item.productId,
-          sellerId: item.sellerId,
-          sellerStore: item.sellerStore,
-          name: item.name,
-          brand: item.brand,
-          category: item.category,
-          sizeLabel: item.sizeLabel,
-          image: item.image,
-          qty: item.qty,
-          unitPriceCents: item.unitPriceCents,
-        })),
-      };
-
-      const result = await createOrder(orderPayload);
-      if (result.success && result.order) {
-        setCompletedOrder(result.order);
-        clearCart();
-        if (user) {
-          addRewardPoints(Math.round(totalCents / 100));
-        }
-        confetti({
-          particleCount: 140,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ["#111827", "#10b981", "#3b82f6", "#f59e0b"],
-        });
-        success("Payment Verified", `Order #${result.order.orderNo} dispatched to atelier packaging queue.`);
-      }
-    } catch (err: any) {
-      error("Order Processing Error", err.message || "Failed to confirm order");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePaystackPayment = async (e: React.FormEvent) => {
+  const handlePaystackPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone || !formData.address) {
-      error("Missing Information", "Please fill in all delivery details");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // 1. Initialize Paystack on server
-      const initRes = await fetch("/api/paystack/initialize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          amount: totalCents, // In pesewas
-          currency: "GHS",
-          metadata: {
-            customerName: formData.name,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-          },
-        }),
-      });
-
-      if (initRes.ok) {
-        const initData = await initRes.json();
-        if (initData.status && initData.data) {
-          const { authorization_url, reference } = initData.data;
-
-          // If Paystack inline SDK is loaded on page
-          if (typeof window !== "undefined" && window.PaystackPop && paystackKey && !paystackKey.includes("placeholder")) {
-            const handler = window.PaystackPop.setup({
-              key: paystackKey,
-              email: formData.email,
-              amount: totalCents,
-              currency: "GHS",
-              ref: reference,
-              callback: (response: any) => {
-                executeOrderCreation(response.reference || reference);
-              },
-              onClose: () => {
-                setLoading(false);
-                info("Payment Cancelled", "You can resume checkout anytime.");
-              },
-            });
-            handler.openIframe();
-            return;
-          }
-
-          // If live hosted redirect url
-          if (authorization_url && authorization_url.startsWith("https://checkout.paystack.com")) {
-            window.location.href = authorization_url;
-            return;
-          }
-
-          // Verified Fallback simulation for test environment
-          setTimeout(() => {
-            executeOrderCreation(reference);
-          }, 1200);
-          return;
-        }
-      }
-    } catch (err: any) {
-      console.warn("Paystack session note:", err.message);
-    }
-
-    // Direct fallback
-    setTimeout(() => {
-      executeOrderCreation(`PSTK_AUTH_${Date.now()}`);
-    }, 1000);
+    error("Checkout Paused", "Secure payment verification and persistent order storage are not ready yet. No payment has been attempted.");
   };
 
   return (
@@ -326,10 +180,10 @@ export function CheckoutModal() {
                   </div>
                   <div>
                     <h3 className="font-heading font-bold text-lg text-slate-950">
-                      Encrypted Paystack Gateway & Logistics
+                      Checkout Setup in Progress
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Mobile Money (MTN, Telecel, AT), Visa, Mastercard, and Apple Pay
+                      Payment methods will be announced when secure checkout is ready.
                     </p>
                   </div>
                 </div>
@@ -467,24 +321,27 @@ export function CheckoutModal() {
 
                 {/* Payment Gateway Box */}
                 <div className="pt-2">
+                  <div role="status" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    Checkout is temporarily paused while secure payment verification and database persistence are completed. No charge will be made.
+                  </div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 font-heading">
-                    2. Payment Security
+                    2. Payment Status
                   </h4>
                   <div className="p-4 rounded-2xl border-2 border-slate-900 bg-slate-50/80 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-4 h-4 rounded-full border-4 border-slate-900 bg-white" />
                       <div>
                         <p className="text-xs font-bold text-slate-950">
-                          Paystack Direct (MoMo, Visa, Mastercard, Apple Pay)
+                          Online payments are not active yet
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          256-bit encrypted authentication • 0% buyer surcharge
+                          No payment will be attempted from this checkout.
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 bg-white px-2 py-1 rounded-md border border-slate-200">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>PCI-DSS</span>
+                      <span>Unavailable</span>
                     </div>
                   </div>
                 </div>
@@ -518,21 +375,11 @@ export function CheckoutModal() {
               <div className="p-5 sm:p-6 border-t border-slate-100 bg-slate-50/50 shrink-0">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-4 bg-slate-950 text-white font-bold text-xs font-mono uppercase tracking-widest rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-xl disabled:opacity-50"
+                  disabled
+                  className="w-full py-4 bg-slate-400 text-white font-bold text-xs font-mono uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-xl disabled:opacity-70 cursor-not-allowed"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Transmitting to Paystack...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 text-emerald-400" />
-                      <span>Authorize Payment • {formatPrice(totalCents)}</span>
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </>
-                  )}
+                  <Lock className="w-4 h-4 text-slate-200" />
+                  <span>Checkout Paused</span>
                 </button>
               </div>
             </form>

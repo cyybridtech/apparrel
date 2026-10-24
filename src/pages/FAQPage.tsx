@@ -37,7 +37,7 @@ const FAQS: FAQItem[] = [
   {
     category: "Payments & Currency",
     question: "What payment methods are supported?",
-    answer: "We accept MTN Mobile Money, Telecel Cash, AT Money, Visa, Mastercard, and Apple Pay powered by Paystack's 256-bit encrypted gateway. You can also view real-time converted prices in USD, EUR, GBP, or NGN using our multi-currency selector.",
+    answer: "Online checkout is temporarily unavailable while secure payment verification and persistent order storage are being completed. No payment will be taken. Currency display preferences are available in the storefront.",
   },
 ];
 

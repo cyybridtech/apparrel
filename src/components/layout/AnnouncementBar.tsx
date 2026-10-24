@@ -60,7 +60,7 @@ export function AnnouncementBar() {
               className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-wider"
             >
               <Crown className="w-3 h-3" />
-              <span>{user.tier} Member</span>
+              <span>{user.role === "customer" ? "Marketplace" : user.role} Member</span>
             </Link>
           ) : (
             <button
