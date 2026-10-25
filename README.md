@@ -1,18 +1,17 @@
-# APPARREL — Modern Luxury E-Commerce Platform
+# APPARREL — Multi-tenant Retail SaaS
 
-A Ghana-focused multi-seller commerce application for Cyybrid Technology, built with **TypeScript**, **React**, **Express**, **Drizzle**, and a TiDB/MySQL schema. The current storefront and operations portal are an in-progress prototype: active API routes still use in-memory state, and payment verification and webhooks are not implemented. Do not use it to process live orders or deploy it as a production marketplace yet.
+A retail operations SaaS foundation for malls, supermarkets, and independent shops, built with **TypeScript**, **React**, **Express**, **Drizzle**, and TiDB/MySQL. Each customer business is modeled as an isolated organization with its own branches, staff, roles, products, inventory, orders, and audit history. The current storefront and operations portal are still an in-progress prototype: active API routes use in-memory state, tenant authorization is not yet wired into the API, and payment verification/webhooks are not implemented. Do not use it to process live orders or deploy it as a production retail system yet.
+
+See the [multi-tenant architecture, RBAC model, and safe migration plan](docs/architecture/multi-tenant-retail-saas.md).
 
 ---
 
 ## 🌟 Key Features
 
-### 1. Multi-Category Taxonomy & Authentic Luxury Drops
-- **Tops & Shirts**: Heavyweight graphic tees (290 GSM), resort linen button-downs, architect hoodies, fine knit polos.
-- **Sneakers & Kicks**: Retro high-tops, speed runners, minimalist nappa trainers, street dunks.
-- **Perfumes & Fragrances**: Royal amber oud extraits, fresh bergamot vetiver EDPs, midnight bourbon vanilla.
-- **Watches & Timepieces**: Automatic skeleton chronographs, rose gold dress watches, 200M titanium divers.
-- **Body Sprays & Grooming**: All-day cedarwood mists, cooling post-workout sprays, evening tonka mists.
-- *Fully extensible dynamic category system for adding future product lines.*
+### 1. Tenant-scoped retail catalog (foundation in progress)
+- The inherited demo UI contains apparel and lifestyle sample products; those categories are not a SaaS tenant limitation.
+- The target catalog supports tenant-owned products, variants, branch-level stock, and retailer-specific categories.
+- Organization scoping is being added to the Drizzle schema; the current API still needs persistent, tenant-filtered repositories before these controls are live.
 
 ### 2. Payments (Not Production-Ready)
 - The repository contains Paystack initialization UI and API code, but it does not yet verify transactions or process signed webhooks.
