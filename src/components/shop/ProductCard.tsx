@@ -5,6 +5,7 @@ import { Product } from "../../lib/api";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
+import SpotlightCard from "../SpotlightCard";
 
 interface ProductCardProps {
   product: Product;
@@ -67,7 +68,17 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
   };
 
   return (
-    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white shadow-[0_3px_14px_rgba(15,23,42,0.035)] transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_16px_35px_rgba(15,23,42,0.11)]">
+    <SpotlightCard
+      theme="light"
+      className="product-spotlight h-full"
+      spotlightColor="rgba(16, 185, 129, 0.9)"
+      intensity={0.48}
+      spotlightSize={250}
+      borderGlow={0.8}
+      proximity={48}
+      smoothing={0.24}
+    >
+    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-[1.3rem] bg-transparent transition duration-300">
       <div
         className="relative isolate aspect-[4/5] overflow-hidden bg-[#f2f1ed]"
         onMouseEnter={() => product.images.length > 1 && setImageIndex(1)}
@@ -194,5 +205,6 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
         </div>
       </div>
     </article>
+    </SpotlightCard>
   );
 }

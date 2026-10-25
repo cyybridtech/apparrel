@@ -78,10 +78,10 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
   return (
     <>
       <header
-        className={`sticky top-0 z-40 transition-all duration-300 ${
+        className={`sticky top-0 z-40 border-b transition-all duration-300 ${
           scrolled
-            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200/80"
-            : "bg-white border-b border-slate-100"
+            ? "bg-white/88 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.08)] border-slate-200/80"
+            : "bg-white/92 backdrop-blur-lg border-slate-100"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -105,7 +105,7 @@ export function Navbar({ onOpenSearch }: NavbarProps) {
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold tracking-widest uppercase bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  MARKETPLACE
+                  RETAIL PLATFORM
                 </span>
               </Link>
 

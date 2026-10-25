@@ -31,11 +31,11 @@ export function Footer() {
                   CYYBRID<span className="text-slate-400">.</span>
                 </span>
                 <span className="block text-[10px] font-mono tracking-widest text-slate-400 uppercase mt-0.5">
-                  Technology Marketplace
+                  Retail Technology
                 </span>
               </Link>
               <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                Ghana's premier multi-seller e-commerce marketplace. Combining unified customer discovery with vendor-isolated inventory matrices and automated split payments.
+                Cyybrid is growing from a multi-seller storefront into a retail platform designed for shops, supermarkets and mall operators. Payment and fulfillment workflows are being developed with care.
               </p>
               <div className="pt-2 flex items-center gap-3">
                 <Link
