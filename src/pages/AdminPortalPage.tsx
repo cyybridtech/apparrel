@@ -640,15 +640,15 @@ export function AdminPortalPage() {
             className="space-y-4 pt-2"
           >
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Username or Email</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Admin or staff email address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="text"
+                  type="email"
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="admin or your username"
+                  placeholder="you@company.com"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pl-10 text-xs text-slate-900 focus:outline-none focus:border-slate-950"
                 />
               </div>

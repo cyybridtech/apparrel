@@ -94,9 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  const login = async (emailOrUsername: string, pass: string): Promise<boolean> => {
-    if (!emailOrUsername || emailOrUsername.trim().length < 2) {
-      error("Identifier Required", "Please enter your username or email address.");
+  const login = async (email: string, pass: string): Promise<boolean> => {
+    if (!email || email.trim().length < 3 || !email.includes("@")) {
+      error("Email Required", "Please enter your email address.");
       return false;
     }
     if (!pass) {
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const res = await authLogin(emailOrUsername.trim(), pass);
+      const res = await authLogin(email.trim(), pass);
       if (res.success && res.user) {
         setUser(res.user);
         success("Signed In", `Welcome back, ${res.user.name}.`);

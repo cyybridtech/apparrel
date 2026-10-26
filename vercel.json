@@ -2,6 +2,22 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/auth/login",
+      "destination": "/api/auth?route=login"
+    },
+    {
+      "source": "/api/auth/register",
+      "destination": "/api/auth?route=register"
+    },
+    {
+      "source": "/api/auth/me",
+      "destination": "/api/auth?route=me"
+    },
+    {
+      "source": "/api/auth/complete-security-setup",
+      "destination": "/api/auth?route=complete-security-setup"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     },
