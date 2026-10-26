@@ -74,7 +74,6 @@ export const AboutPage: React.FC = () => {
                 alt="Cyybrid Atelier Craftsmanship"
                 className="w-full h-full object-cover contrast-110 hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 text-xs font-bold text-slate-900 shadow-lg">
                 Cyybrid Technology HQ — Multi-Seller Commerce Engine
               </div>

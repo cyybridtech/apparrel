@@ -70,10 +70,6 @@ export function HomePage() {
   return (
     <div className="home-page space-y-16 pb-16 sm:space-y-24">
       <section className="home-hero relative isolate overflow-hidden text-white">
-        <div className="home-hero-grid pointer-events-none absolute inset-0" aria-hidden="true" />
-        <div className="home-hero-orb home-hero-orb-one pointer-events-none absolute" aria-hidden="true" />
-        <div className="home-hero-orb home-hero-orb-two pointer-events-none absolute" aria-hidden="true" />
-
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:py-20">
           <div className="relative z-10 space-y-7 lg:col-span-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100 shadow-lg shadow-black/10 backdrop-blur-md sm:text-[11px]">
@@ -123,24 +119,13 @@ export function HomePage() {
           </div>
 
           <div className="relative mx-auto w-full max-w-xl lg:col-span-5 lg:max-w-none">
-            <div className="hero-image-halo pointer-events-none absolute -inset-5 rounded-[2.5rem]" aria-hidden="true" />
-            <SpotlightCard
-              theme="dark"
-              className="hero-spotlight"
-              spotlightColor="rgba(110, 231, 183, 0.9)"
-              intensity={0.34}
-              spotlightSize={300}
-              borderGlow={0.85}
-              proximity={72}
-              smoothing={0.24}
-            >
+            <SpotlightCard className="hero-spotlight">
               <div className="hero-showcase relative isolate aspect-[5/5.7] overflow-hidden rounded-[1.7rem] sm:aspect-[5/4.7] lg:aspect-[5/6]">
                 <img
                   src="/images/retail-shop-hero.jpg"
                   alt="A bright, modern boutique with curated clothing displays"
                   className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-1000 hover:scale-[1.04]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/15 via-slate-950/5 to-slate-950/85" />
                 <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3 sm:left-6 sm:right-6 sm:top-6">
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/35 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-lg sm:text-[10px]">
                     <Sparkles className="h-3.5 w-3.5 text-emerald-200" />
@@ -151,7 +136,7 @@ export function HomePage() {
                   </span>
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                <div className="hero-showcase-copy absolute bottom-0 left-0 right-0 p-5 sm:p-7">
                   <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-200">
                     <span className="h-px w-7 bg-emerald-300" />
                     Made for discovery
@@ -199,19 +184,19 @@ export function HomePage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 sm:grid-cols-3 sm:gap-4 sm:px-6 lg:px-8">
-        <SpotlightCard theme="light" className="home-value-card" spotlightColor="rgba(16, 185, 129, 0.78)" intensity={0.45} spotlightSize={220} borderGlow={0.72} proximity={55}>
+        <SpotlightCard className="home-value-card">
           <div className="flex h-full items-start gap-4">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800"><Sparkles className="h-5 w-5" /></div>
             <div><p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-emerald-800">01 · The edit</p><h3 className="mt-2 font-heading text-base font-extrabold tracking-tight text-slate-950">Good things, made easy to find.</h3><p className="mt-1.5 text-xs leading-5 text-slate-500">Explore a growing selection without jumping between stores.</p></div>
           </div>
         </SpotlightCard>
-        <SpotlightCard theme="light" className="home-value-card" spotlightColor="rgba(59, 130, 246, 0.72)" intensity={0.4} spotlightSize={220} borderGlow={0.72} proximity={55}>
+        <SpotlightCard className="home-value-card">
           <div className="flex h-full items-start gap-4">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700"><Building2 className="h-5 w-5" /></div>
             <div><p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-blue-700">02 · The network</p><h3 className="mt-2 font-heading text-base font-extrabold tracking-tight text-slate-950">Distinct shops. One destination.</h3><p className="mt-1.5 text-xs leading-5 text-slate-500">A shared storefront with room for each seller’s own character.</p></div>
           </div>
         </SpotlightCard>
-        <SpotlightCard theme="light" className="home-value-card" spotlightColor="rgba(245, 158, 11, 0.75)" intensity={0.4} spotlightSize={220} borderGlow={0.72} proximity={55}>
+        <SpotlightCard className="home-value-card">
           <div className="flex h-full items-start gap-4">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700"><Store className="h-5 w-5" /></div>
             <div><p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-amber-700">03 · The future</p><h3 className="mt-2 font-heading text-base font-extrabold tracking-tight text-slate-950">A retail platform built to grow.</h3><p className="mt-1.5 text-xs leading-5 text-slate-500">Cyybrid is evolving for shops, supermarkets and multi-location teams.</p></div>
@@ -245,7 +230,7 @@ export function HomePage() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
           {categories.map((category, index) => (
-            <SpotlightCard key={category.slug} theme="light" className={`category-spotlight category-spotlight-${index % 4}`} spotlightColor="rgba(16, 185, 129, 0.78)" intensity={0.38} spotlightSize={180} borderGlow={0.65} proximity={45}>
+            <SpotlightCard key={category.slug} className={`category-spotlight category-spotlight-${index % 4}`}>
               <Link to={`/shop?category=${category.slug}`} className="category-tile group flex h-full min-h-[142px] flex-col items-start justify-between">
                 <div className="flex w-full items-start justify-between">
                   <div className="category-icon grid h-11 w-11 place-items-center rounded-2xl border border-white/70 bg-white/75 text-slate-800 shadow-sm transition duration-300 group-hover:-translate-y-1 group-hover:rotate-[-4deg]">{getCategoryIcon(category.slug)}</div>
@@ -265,7 +250,6 @@ export function HomePage() {
       </section>
 
       <section className="home-editorial-band relative mx-4 overflow-hidden rounded-[2rem] sm:mx-6 lg:mx-auto lg:max-w-7xl">
-        <div className="editorial-band-orb pointer-events-none absolute -right-24 -top-36 h-80 w-80 rounded-full" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-10">
           <div className="max-w-xl">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-emerald-200">A new kind of retail home</p>

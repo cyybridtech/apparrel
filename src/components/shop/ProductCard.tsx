@@ -5,7 +5,6 @@ import { Product } from "../../lib/api";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
-import SpotlightCard from "../SpotlightCard";
 
 interface ProductCardProps {
   product: Product;
@@ -68,17 +67,7 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
   };
 
   return (
-    <SpotlightCard
-      theme="light"
-      className="product-spotlight h-full"
-      spotlightColor="rgba(16, 185, 129, 0.9)"
-      intensity={0.48}
-      spotlightSize={250}
-      borderGlow={0.8}
-      proximity={48}
-      smoothing={0.24}
-    >
-    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-[1.3rem] bg-transparent transition duration-300">
+    <article className="spotlight-card product-spotlight group relative flex min-w-0 flex-col overflow-hidden rounded-[1.3rem] bg-transparent transition duration-300">
       <div
         className="relative isolate aspect-[4/5] overflow-hidden bg-[#f2f1ed]"
         onMouseEnter={() => product.images.length > 1 && setImageIndex(1)}
@@ -92,8 +81,6 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
             loading="lazy"
           />
         </Link>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25 opacity-70" />
-
         <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[70%] flex-col items-start gap-1.5 sm:left-3 sm:top-3">
           {(product.badge || product.isNew) && (
             <span className="max-w-full truncate rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-slate-900 shadow-sm backdrop-blur sm:text-[10px]">
@@ -205,6 +192,5 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
         </div>
       </div>
     </article>
-    </SpotlightCard>
   );
 }

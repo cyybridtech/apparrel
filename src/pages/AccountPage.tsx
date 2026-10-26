@@ -197,7 +197,7 @@ export function AccountPage() {
       <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl border border-slate-800">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-500 text-white flex items-center justify-center font-black text-2xl font-heading shadow-xl shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-600 text-white flex items-center justify-center font-black text-2xl font-heading shadow-xl shrink-0">
               {user.name.charAt(0)}
             </div>
             <div>
